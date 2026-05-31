@@ -9,7 +9,7 @@ This change allows me to learn more about how to deal with memory and scale usin
 
 ## Dev Log
 
-### 5/28-5/13: 
+### 5/28-5/31: 
 - I spent the whole time trying to figure out how to input using C arrays and break down the sentence into words
 - I created my custom `carr` (char-array) `struct` that I coded custom operator functionalities to behave like a char pointer:
   - `carr myvar = new char[1024]`
