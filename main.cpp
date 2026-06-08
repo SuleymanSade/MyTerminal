@@ -1,8 +1,7 @@
 #include <iostream>
 #include <cstring>
-#include <filesystem>
-
-namespace fs = std::filesystem;
+#include <unistd.h>
+#include <dirent.h>
 
 // prototypes
 void throw_error(const char error_type[], const char error_msg[]);
@@ -50,12 +49,26 @@ public:
         
         return arr[i];
     }
+
+    carr& operator=(const char input[]){
+        n = strlen(input) + 1;
+        
+        delete [] arr;
+
+        strcpy(arr, input);
+
+        return *this;
+    }
     
     carr& operator=(char* ptr){
         delete [] arr;
 
-        arr = ptr;
-        n = strlen(arr);
+        n = strlen(ptr);
+        arr = new char[n];
+
+        for(int i=0; i<strlen(ptr); ++i){
+            arr[i] = ptr[i];
+        }
 
         return *this;
     }
@@ -64,8 +77,11 @@ public:
         delete [] arr;
 
         n = other.n;
+        create(n);
         if(other.arr != nullptr){
-            arr = other.arr;
+            for(int i=0; i<n; ++i){
+                arr[i] = other[i];
+            }
         }
         else{
             arr = nullptr;
@@ -124,7 +140,7 @@ public:
         arr = new char[n];
     }
 
-    void recreate(int new_size){
+    void create(int new_size){
         n = new_size;
         reset();
     }
@@ -132,10 +148,22 @@ public:
     int size(){
         return n;
     }
+
+    char* get_arr(){
+        return arr;
+    }
+
+    void destroy(){
+        delete [] arr;
+        n = 0;
+        arr = nullptr;
+    }
 };
 
 // Prototypes
 bool seperate_commands(carr &text, carr cmd[], int& n_cmd);
+bool run_commands(carr cmd[], int n_cmd);
+carr find_current_loc();
 
 int main(){
     std::cout << "Welcome to the terminal\n";
@@ -144,12 +172,12 @@ int main(){
     carr cmd[1024];
     int n_cmd=0;
     
-    cmd[0].resize(1024);
-
+    
     do{
+        cmd[0].resize(1024);
         n_cmd = 0;
 
-        std::cout << "coolshell> ";
+        std::cout << "coolshell: " << find_current_loc() << "> ";
         
         // To leave space for '\0' needs to input one less
         std::cin.getline(text, 1023);
@@ -162,10 +190,14 @@ int main(){
 
         // std::cout << static_cast<char*>(cmd[0]);
         
+        run_commands(cmd, n_cmd);
+
         for(int i=0; i<n_cmd; ++i){
             // This is where I want to put the removal fors
             std::cout << "i= " << i << ", cmd[i]= " << (cmd[i]) << "\n";
+            cmd[i].destroy();
         }
+
     } while(strcmp(text, "exit") && strcmp(text, "0"));
 
     return 0;
@@ -204,7 +236,7 @@ bool seperate_commands(carr &text, carr cmd[], int& n_cmd){
 
                 // cmd[cmd_row] = new char[1024];
                 
-                cmd[cmd_row].recreate(1024);
+                cmd[cmd_row].create(1024);
                 n_cmd+=1;
             }
         }
@@ -229,4 +261,94 @@ bool seperate_commands(carr &text, carr cmd[], int& n_cmd){
 void throw_error(const char error_type[], const char error_msg[]){
     std::cerr << "A(n) " << error_type << " error occured in terminal:\n";
     std::cerr << "\t" << error_msg << "\n";
+}
+
+carr find_current_loc(){
+    carr abs_path;
+    abs_path.create(1024);
+
+    while(getcwd(abs_path, abs_path.size()) == nullptr && abs_path.size() < 3e4){
+        // doubles the size of buffer if it doesn't fit the leght of abs_path
+        // hard stop at 3e4 as a safety
+        abs_path.create(abs_path.size()*2);
+    }
+
+    return abs_path;
+}
+
+void change_dir(carr& new_dir){
+    // const carr curr = find_current_loc();
+    if(strcmp(new_dir.get_arr(), "out") == 0){
+        chdir("..");
+    }
+    else{
+        chdir(new_dir.get_arr());
+    }
+
+    int i=0;
+}
+int carr_to_int(carr &carr_var, int def){
+    int res = 0, size = 0;
+
+    while(carr_var[size] != '\0') size += 1;
+
+    for(int i=0; i<size; ++i){
+        if(carr_var[i] <= '9' && carr_var[i] >= '0'){
+            res += (carr_var[i] - '0') * (size - i);
+        }
+        else{
+            throw_error("wrong type", "entered a non-numerical value");
+            return def;
+        }
+    }
+
+    return res;
+}
+
+void list_content(carr content[], carr& target_dir, int N){
+    DIR* dir = opendir(target_dir);
+
+    // target_dir = (target_dir.get_arr() == nullptr) ? "." : target_dir; 
+
+    struct dirent* entry;
+    
+    int i=0;
+    while(i<N && (entry = readdir(dir)) != nullptr){
+        
+        
+        // Hides the hidden files
+        if(entry->d_name[0] == '.'){
+            i-=1;
+        }
+        else{
+            content[i] = entry->d_name;
+            // char * empty = "\0";
+            // strcat(content[i], empty);
+        }
+        i+=1;
+    }
+
+    closedir(dir);
+}
+
+bool run_commands(carr cmd[], int n_cmd){
+    if(strcmp(cmd[0], "here") == 0){
+        std::cout << find_current_loc() << "\n";
+    }
+    else if(strcmp(cmd[0], "go") == 0){
+        change_dir(cmd[1]);
+    }
+    else if(strcmp(cmd[0], "show") == 0){
+        const int N = (n_cmd < 2) ? 100: carr_to_int(cmd[2], 100);
+        carr content[N];
+        carr empty_dir(2);
+        empty_dir[0] = '.'; empty_dir[1] = '\0';
+
+        // list_content(content, (n_cmd < 1) ? empty_dir:cmd[1], N);
+        list_content(content, empty_dir, 100);
+        for(int i=0; i<N && content[i].get_arr() != nullptr; ++i){
+            std::cout << content[i] << "\n";
+        }
+    }
+    return false;
 }
