@@ -3,6 +3,28 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <stdbool.h>
+#include <ctype.h>
+
+
+// We are using this approach to prevent incompatibility between linux and windows file creation
+// In Windows the header and the function usage are different than that of linux
+// The reason why we are doing this definition here is because it discards the other statement and not seen by compilar
+// In C, compiler creates pathways for both pathways but if either one of those paths are not soundly for the compiler, it throws error
+// This way prevents that by disregarding the other pathway
+// Checkout the devlog in README.md for more info
+#if defined(_WIN32) || defined(_WIN64)
+    // This part is never seen by a non-windows machine, eg linux and mac
+    #include <direct.h>
+    #define create_dir(path) _mkdir(path)
+#else
+    // This part is never seen by a windows machine
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    // 0777 grants read, write and exec perms
+    #define create_dir(path) mkdir(path, 0777)
+#endif
+    
 
 // For convenience this struct stores the size of the array
 // And is standarized
@@ -50,7 +72,7 @@ int main(){
         printf("coolshell: %s> ", (curr->arr));
         carr_delete(curr);
         free(curr);
-        
+
         // Reads until reaching "\n"
         // To leave space for '\0' needs to input one less than 1024
         scanf("%1023[^\n]", text->arr);
@@ -186,10 +208,6 @@ void list_content(carr content[], carr target_dir, int N){
             i-=1;
         }
         else{
-            // content[i] = entry->d_name;
-            // strcpy(content->arr, entry->d_name);
-            // char * empty = "\0";
-            // strcat(content->arr[i], empty);
             printf("%s\n", entry->d_name);
         }
         i+=1;
@@ -198,8 +216,19 @@ void list_content(carr content[], carr target_dir, int N){
     closedir(dir);
 }
 
+void create_file(char* file_name, bool is_overwrite){
+    FILE *fptr;
+    if(is_overwrite){
+        fptr = fopen(file_name, "w");
+    }
+    else{
+        fptr = fopen(file_name, "a");
+    }
+
+    fclose(fptr);
+}
+
 void run_commands(carr* cmd[], int n_cmd){
-    // printf("\n%s\n",cmd[0]->arr);
     if(strcmp(cmd[0]->arr, "here") == 0){
         carr* pos = (carr*)malloc(sizeof(carr));
         carr_init(pos);
@@ -219,8 +248,6 @@ void run_commands(carr* cmd[], int n_cmd){
         carr_init(&target_dir);
 
         int N =100;
-
-        // printf("%d\n", n_cmd);
 
         if(n_cmd == 1){
             // Only shows the default number of files that is stored inside (100)
@@ -242,6 +269,35 @@ void run_commands(carr* cmd[], int n_cmd){
 
         list_content(content, target_dir, N);
         carr_delete(&target_dir);
+    }
+    else if(strcmp(cmd[0]->arr, "create") == 0 || strcmp(cmd[0]->arr, "cr") == 0){
+        if(n_cmd < 3){
+            printf("missing number of parameters for file/dir creation\n");
+            return ;
+        }
+
+        if(strcmp(cmd[1]->arr, "file") == 0){
+            if(n_cmd < 4){
+                create_file(cmd[2]->arr, false);
+            }
+            else{
+                bool isOverwrite = false;
+                // lowercase the whole word
+                for(int i=0; i<cmd[3]->n; ++i){
+                    cmd[3]->arr[i] = tolower(cmd[3]->arr[i]);
+                }
+                if(strcmp(cmd[3]->arr, "yes") == 0 || strcmp(cmd[3]->arr, "y") == 0){
+                    create_file(cmd[2]->arr, true);
+                }
+                else{
+                    create_file(cmd[2]->arr, false);
+                }
+            }
+        }
+        else if(strcmp(cmd[1]->arr, "folder") == 0 || strcmp(cmd[1]->arr, "dir") == 0 || strcmp(cmd[1]->arr, "directory") == 0){
+            create_dir(cmd[2]->arr);
+        }
+
     }
     // return false;
 }
