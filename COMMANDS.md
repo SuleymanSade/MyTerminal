@@ -14,8 +14,8 @@ create / cr --> Creates a file or directory
 - param3(optional): whether to overwrite file if the file already exists, `yes` or `no`, default to `no`, only used for file creation not for directory
 
 MISC:
-<!-- admin Gives access to admin commands -->
-<!-- help Shows the commands to access -->
 history --> Shows all the previous commands that have been inputted in terminal, numbered
 exit / 0 --> Exits the terminal
 
+BASH:
+Any other command that is normally supported by console should work, in theory. But it only works for linux devices.

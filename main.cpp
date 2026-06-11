@@ -3,6 +3,13 @@
 #include <unistd.h>
 #include <dirent.h>
 
+/*
+THIS CODE IS LEGACY
+THIS WAS THE INITIAL VERSION THAT I STARTED CODING IN C++
+BUT THE CURRENT DEVELOPMENT IS IN `terminal.c`
+*/
+
+
 // prototypes
 void throw_error(const char error_type[], const char error_msg[]);
 
