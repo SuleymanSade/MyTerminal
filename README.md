@@ -38,5 +38,6 @@ I have recently gotten curious about low level systems and
 - I thought about making this terminal more of a game, so that people can navigate through the directories, open files and search through things. For now this is just an idea but would be cool to see how it turns out.
 - I learned that actual terminals use child processes to ensure that the main terminal process doesn't crash if something goes wrong. So I also want to imlement that in my terminal.
 - I was able to implement `show` command back with C, it is a very similar code I just had to play around with how I can manage memory with C.
+- I also completed `show` command with the option to specify target directory and number of items to show.
 - I attempted to implement the child process with `fork()` but reached an interesting roadblock. When I use `fork()` the function occurs in the child process meaning when I use `go` command it only moves the child process to the new directory but the parent process is still the original directory. So the next `show` command show the contents of the original directory rather than the newly moved one. To get around this I can use `fork()` only for certain commands, though I am worried about the scalibility of this solution, I decided to put a halt on this idea for now and will likely come back again.
 

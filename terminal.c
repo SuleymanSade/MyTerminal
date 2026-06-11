@@ -48,31 +48,26 @@ int main(){
         find_current_loc(curr);
         
         printf("coolshell: %s> ", (curr->arr));
-        // carr_delete(curr);
-        // free(curr);
+        carr_delete(curr);
+        free(curr);
+        
         // Reads until reaching "\n"
         // To leave space for '\0' needs to input one less than 1024
         scanf("%1023[^\n]", text->arr);
         // Cleans the leftover newline from the previous input
         getchar();
 
-        pid_t p;
-        p= fork();
+        if(strlen(text->arr) == 0) continue;
 
-        if(p>0){
-            // Child process, so if it fails the whole terminal doesn't go with it
-            if(strlen(text->arr) == 0) continue;
+        seperate_commands(text, cmd, &n_cmd);
+        
+        run_commands(cmd, n_cmd);
 
-            seperate_commands(text, cmd, &n_cmd);
-            
-            run_commands(cmd, n_cmd);
-
-            for(int i=0; i<n_cmd; ++i){
-                // Deletes the array
-                carr_delete(cmd[i]);
-                // Deletes the memory address of the carr object itself
-                free(cmd[i]);
-            }
+        for(int i=0; i<n_cmd; ++i){
+            // Deletes the array
+            carr_delete(cmd[i]);
+            // Deletes the memory address of the carr object itself
+            free(cmd[i]);
         }
 
     } while(strcmp(text->arr, "exit") && strcmp(text->arr, "0"));
