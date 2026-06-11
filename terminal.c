@@ -14,13 +14,21 @@
 // This way prevents that by disregarding the other pathway
 // Checkout the devlog in README.md for more info
 #if defined(_WIN32) || defined(_WIN64)
-    // This part is never seen by a non-windows machine, eg linux and mac
+// This part is never seen by a non-windows machine, eg linux and mac
     #include <direct.h>
+    #include <windows.h>
     #define create_dir(path) _mkdir(path)
+    #define waitpid(pid, status, num) \
+        DWORD desAcc = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ; \
+        HANDLE h_process = OpenProcess(desAcc, FALSE, pid); \
+        WaitForSingleObject(h_process, INFINITE); \
+        CloseHandle(h_process) \
+
 #else
     // This part is never seen by a windows machine
     #include <sys/stat.h>
     #include <sys/types.h>
+    #include <sys/wait.h>
     // 0777 grants read, write and exec perms
     #define create_dir(path) mkdir(path, 0777)
 #endif
@@ -228,6 +236,32 @@ void create_file(char* file_name, bool is_overwrite){
     fclose(fptr);
 }
 
+void run_ext_command(carr* cmd[], int n_cmd){
+    char* command[n_cmd+1];
+    for(int i=0; i<n_cmd; ++i){
+        command[i] = cmd[i]->arr;
+    }
+    command[n_cmd] = NULL;
+
+    // We create a copy of the current process, which the copy would be terminated by exec
+    pid_t pid = fork();
+    
+    if(pid == 0){
+        // Child process
+
+        // Runs the external command
+        execvp(command[0], command);
+    }
+    else{
+        // Parent process
+
+        int status;
+        // Waits for child process to finish
+        waitpid(pid, &status, 0);
+    }
+
+}
+
 void run_commands(carr* cmd[], int n_cmd){
     if(strcmp(cmd[0]->arr, "here") == 0){
         carr* pos = (carr*)malloc(sizeof(carr));
@@ -299,7 +333,9 @@ void run_commands(carr* cmd[], int n_cmd){
         }
 
     }
-    // return false;
+    else{
+        run_ext_command(cmd, n_cmd);
+    }
 }
 
 void print_err(const char msg[]){
