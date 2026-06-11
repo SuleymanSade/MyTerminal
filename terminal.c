@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <dirent.h>
 
 // For convenience this struct stores the size of the array
 // And is standarized
@@ -20,7 +20,7 @@ void carr_delete(carr *c);
 void carr_copy(carr *c1, carr *c2);
 void find_current_loc(carr *c);
 int seperate_commands(carr *text, carr *cmd[], int *n_cmd);
-
+void run_commands(carr* cmd[], int n_cmd);
 
 
 int main(){
@@ -46,23 +46,33 @@ int main(){
         carr_alloc(curr, 1024);
 
         find_current_loc(curr);
-
+        
         printf("coolshell: %s> ", (curr->arr));
+        // carr_delete(curr);
+        // free(curr);
         // Reads until reaching "\n"
         // To leave space for '\0' needs to input one less than 1024
         scanf("%1023[^\n]", text->arr);
         // Cleans the leftover newline from the previous input
         getchar();
-        
-        if(strlen(text->arr) == 0) continue;
 
-        seperate_commands(text, cmd, &n_cmd);
+        pid_t p;
+        p= fork();
 
-        
-        // run_commands(cmd, n_cmd);
+        if(p>0){
+            // Child process, so if it fails the whole terminal doesn't go with it
+            if(strlen(text->arr) == 0) continue;
 
-        for(int i=0; i<n_cmd; ++i){
-            carr_delete(cmd[i]);
+            seperate_commands(text, cmd, &n_cmd);
+            
+            run_commands(cmd, n_cmd);
+
+            for(int i=0; i<n_cmd; ++i){
+                // Deletes the array
+                carr_delete(cmd[i]);
+                // Deletes the memory address of the carr object itself
+                free(cmd[i]);
+            }
         }
 
     } while(strcmp(text->arr, "exit") && strcmp(text->arr, "0"));
@@ -101,22 +111,23 @@ int seperate_commands(carr *text, carr *cmd[], int *n_cmd){
                 cmd_row +=1;
                 cmd_col = 0;
 
-                // cmd[cmd_row] = new char[1024];
-                
+                // Need to allocate memory address for the carr* 
+                cmd[cmd_row] = (carr*)malloc(sizeof(carr));
+
                 carr_init(cmd[cmd_row]);
                 carr_alloc(cmd[cmd_row], 1024);
-                n_cmd+=1;
+                *n_cmd+=1;
             }
         }
         else{
-            cmd[cmd_row][cmd_col] = text[i];
+            cmd[cmd_row]->arr[cmd_col] = text->arr[i];
             cmd_col+=1;
         }
 
         i+=1;
     }
 
-    n_cmd +=1;
+    (*n_cmd) +=1;
     if(cmd_col > 0){
         cmd[cmd_row]->arr[cmd_col] = '\0'; // End of a char array 
     }
@@ -136,17 +147,18 @@ void find_current_loc(carr *c){
     }   
 }
 
-// void change_dir(carr& new_dir){
-//     // const carr curr = find_current_loc();
-//     if(strcmp(new_dir.get_arr(), "out") == 0){
-//         chdir("..");
-//     }
-//     else{
-//         chdir(new_dir.get_arr());
-//     }
+void change_dir(carr* new_dir){
+    // const carr curr = find_current_loc();
+    if(strcmp(new_dir->arr, "out") == 0){
+        chdir("..");
+    }
+    else{
+        chdir(new_dir->arr);
+    }
 
-//     int i=0;
-// }
+    int i=0;
+}
+
 // int carr_to_int(carr &carr_var, int def){
 //     int res = 0, size = 0;
 
@@ -165,53 +177,79 @@ void find_current_loc(carr *c){
 //     return res;
 // }
 
-// void list_content(carr content[], carr& target_dir, int N){
-//     DIR* dir = opendir(target_dir);
+void list_content(carr content[], carr target_dir, int N){
+    DIR* dir = opendir(target_dir.arr);
 
-//     // target_dir = (target_dir.get_arr() == nullptr) ? "." : target_dir; 
+    // target_dir = (target_dir.get_arr() == nullptr) ? "." : target_dir; 
 
-//     struct dirent* entry;
+    struct dirent* entry;
     
-//     int i=0;
-//     while(i<N && (entry = readdir(dir)) != nullptr){
-        
-        
-//         // Hides the hidden files
-//         if(entry->d_name[0] == '.'){
-//             i-=1;
-//         }
-//         else{
-//             content[i] = entry->d_name;
-//             char * empty = "\0";
-//             strcat(content[i], empty);
-//         }
-//         i+=1;
-//     }
+    int i=0;
+    while(i<N && (entry = readdir(dir)) != NULL){
+        // Hides the hidden files
+        if(entry->d_name[0] == '.'){
+            i-=1;
+        }
+        else{
+            // content[i] = entry->d_name;
+            // strcpy(content->arr, entry->d_name);
+            // char * empty = "\0";
+            // strcat(content->arr[i], empty);
+            printf("%s\n", entry->d_name);
+        }
+        i+=1;
+    }
 
-//     closedir(dir);
-// }
+    closedir(dir);
+}
 
-// bool run_commands(carr cmd[], int n_cmd){
-//     if(strcmp(cmd[0], "here") == 0){
-//         std::cout << find_current_loc() << "\n";
-//     }
-//     else if(strcmp(cmd[0], "go") == 0){
-//         change_dir(cmd[1]);
-//     }
-//     else if(strcmp(cmd[0], "show") == 0){
-//         const int N = (n_cmd < 2) ? 100: carr_to_int(cmd[2], 100);
-//         carr content[N];
-//         carr empty_dir(2);
-//         empty_dir[0] = '.'; empty_dir[1] = '\0';
+void run_commands(carr* cmd[], int n_cmd){
+    // printf("\n%s\n",cmd[0]->arr);
+    if(strcmp(cmd[0]->arr, "here") == 0){
+        carr* pos = (carr*)malloc(sizeof(carr));
+        carr_init(pos);
+        carr_alloc(pos, 1024);
+        find_current_loc(pos);
 
-//         // list_content(content, (n_cmd < 1) ? empty_dir:cmd[1], N);
-//         list_content(content, empty_dir, 100);
-//         for(int i=0; i<N && content[i].get_arr() != nullptr; ++i){
-//             std::cout << content[i] << "\n";
-//         }
-//     }
-//     return false;
-// }
+        printf("you are at: %s\n", pos->arr);
+
+        carr_delete(pos);
+        free(pos);
+    }
+    else if(strcmp(cmd[0]->arr, "go") == 0){
+        change_dir(cmd[1]);
+    }
+    else if(strcmp(cmd[0]->arr, "show") == 0){
+        carr target_dir;
+        carr_init(&target_dir);
+
+        int N =100;
+
+        // printf("%d\n", n_cmd);
+
+        if(n_cmd == 1){
+            // Only shows the default number of files that is stored inside (100)
+            carr_alloc(&target_dir, 1024);
+            // Shows the files in the current directory if not specified
+            strcpy(target_dir.arr, ".");
+        }
+        else if(n_cmd == 2){
+            carr_alloc(&target_dir, cmd[1]->n);
+            carr_copy(&target_dir, cmd[1]);
+        }
+        else if(n_cmd == 3){
+            N = atoi(cmd[2]->arr);
+            carr_alloc(&target_dir, cmd[1]->n);
+            carr_copy(&target_dir, cmd[1]);
+        }
+
+        carr content[1024];
+
+        list_content(content, target_dir, N);
+        carr_delete(&target_dir);
+    }
+    // return false;
+}
 
 void print_err(const char msg[]){
     fprintf(stderr, "%s", msg);
@@ -249,4 +287,6 @@ void carr_copy(carr *c1, carr *c2){
     if(c2->arr == NULL){
         c1->n=0;
     }
+
+    strcpy(c1->arr, c2->arr);
 }

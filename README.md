@@ -1,11 +1,17 @@
 # MyTerminal
 ## What is This?
 
-This is a custom terminal that I am coding using C++ to get familiar with low-level systems and how terminals work under the hood.
 
-I know C++ simplifies string input and many other features that make this an easy project. For that reason, I am avoiding strings and instead opting for char pointers and char arrays.
+## Tech Stack
+- C++
+  - I was limitting myself to only primary features but since I switched to C, I don't know if this is applicable
+- C
+  - The programming language I am using to code the terminal
+- WSL
+  - I am using Windows which I heard causes trouble when trying to navigate directories with C since it is not a Unix system. So WSL allows me to get around that without having to switch to a linux machine.
 
-This change allows me to learn more about how to deal with memory and scale using dynamic arrays.
+## Motivation
+I have recently gotten curious about low level systems and 
 
 ## Dev Log
 
@@ -27,3 +33,10 @@ This change allows me to learn more about how to deal with memory and scale usin
 - Decided to switch to using C for an absolute challenge and to get more familiar with how C works. Since the code is already C-like it wouldn't be like coding from scratch. And I would have absolute control over everything and how memory is handled.
 - The reason to moving on with C-like structure is also because of how chaotic everything got with trying to use C++ and C features together. For example in carr the destructor helped with cleaning to a certain extent but becase of how structs pass by value it was destructing when the function came to an end creating issues with memory management and also free space errors.
 - I also wanted to go all in if I am doing an application that is supposed ot be low-level.
+
+### 6/8-6/10:
+- I thought about making this terminal more of a game, so that people can navigate through the directories, open files and search through things. For now this is just an idea but would be cool to see how it turns out.
+- I learned that actual terminals use child processes to ensure that the main terminal process doesn't crash if something goes wrong. So I also want to imlement that in my terminal.
+- I was able to implement `show` command back with C, it is a very similar code I just had to play around with how I can manage memory with C.
+- I attempted to implement the child process with `fork()` but reached an interesting roadblock. When I use `fork()` the function occurs in the child process meaning when I use `go` command it only moves the child process to the new directory but the parent process is still the original directory. So the next `show` command show the contents of the original directory rather than the newly moved one. To get around this I can use `fork()` only for certain commands, though I am worried about the scalibility of this solution, I decided to put a halt on this idea for now and will likely come back again.
+
