@@ -46,3 +46,17 @@ I have recently gotten curious about low level systems and
 - I implemented the file creation which was pretty straightforward using `fopen()`, which also allows to whether to overwrite the file if it already exists.
 - When working with the directory creation, I ran into another roadblock. Apparently, creating directory differs between windows and linux/mac, so after doing some research I found that I can check whether the program is running on windows or linux/mac and use the appropriate calls.
 - To get around the previously mentioned issue I used `#if` and `#endif` preprocessors, these are checked before the compilor runs. Normally in C the compilar compiles the code for both options (both if and else) but since one side is not suitable for os it will break since it doesn't know what that function is. But with preprocessors only the code that is suitable for os will run and the other will be ignored so it won't break. I used this to set their function of _mkdir() for windows and mkdir() for linux/mac to my `create_dir()` function which works great.
+
+## Future development plans
+- [ ] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
+- [ ] Implementing child processes for certain commands to protect the main process
+- [ ] Adding bunch of error protection and edge cases as the code is NOT SAFE at all. I just disregarded all the error handling for the sake of development speed.
+- [ ] Adding a feature to read files and show their contents
+- [ ] Adding a feature to search for keywords in files (similar to `grep` in bash)
+- [ ] Adding a feature to delete files an dirs
+- [ ] Change the content of files (tricky, since I need to have some kind of text editor in the terminal)
+- [ ] A `history` command to show previous commands
+- [ ] up/down arrow keys showing previous commands (need to implement `history` first)
+- [ ] Adding `<` and `>` for input and output redirection, I likely need to change teh current way commands are implemented which is a lot of work, but it would be cool
+- [ ] Adding `|` for piping commands, same issue as the previous one
+- [ ] Adding `&` for running commands in the background, same issue as the previous one, likely can be done with `fixed()` and `exec()` though

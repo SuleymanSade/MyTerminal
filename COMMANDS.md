@@ -9,9 +9,9 @@ show --> Shows the contents of the current directory
 
 CREATION:
 create / cr --> Creates a file or directory
-- param1: `dir` or `folder` for directory, `file` for file
+- param1: `dir` or `folder` or `directory` for directory, `file` for file
 - param2: the name of the file or directory to create
-- param3(optional): whether to overwrite file if the file already exists, `yes` or `no`, default to `no`
+- param3(optional): whether to overwrite file if the file already exists, `yes` or `no`, default to `no`, only used for file creation not for directory
 
 MISC:
 <!-- admin Gives access to admin commands -->
