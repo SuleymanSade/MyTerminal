@@ -18,8 +18,6 @@
     #include <direct.h>
     #include <windows.h>
     #define create_dir(path) _mkdir(path)
-    // I coded it this way to work similar to `waitpid()` in linux
-    #define run_ext_command() printf("unknown command, note external bash commands cannot be run in windows machine\n")
 
 #else
     // This part is never seen by a windows machine
@@ -28,28 +26,6 @@
     #include <sys/wait.h>
     // 0777 grants read, write and exec perms
     #define create_dir(path) mkdir(path, 0777)
-
-    #define run_ext_command() \
-        do { \
-        char* command[n_cmd+1]; \
-        for(int i=0; i<n_cmd; ++i){ \
-            command[i] = cmd[i]->arr; \
-        } \
-        command[n_cmd] = NULL; \
-        // We create a copy of the current process, which the copy would be terminated by exec
-        pid_t pid = fork(); \
-        if(pid == 0){ \
-            // Child process
-
-            // Runs the external command
-            execvp(command[0], command); \
-        } else{ \
-            // Parent process
-            int status; \
-            // Waits for child process to finish
-            waitpid(pid, &status, 0); \
-        } \
-        } while(0)
 #endif
     
 
@@ -70,7 +46,10 @@ void carr_copy(carr *c1, carr *c2);
 void find_current_loc(carr *c);
 int seperate_commands(carr *text, carr *cmd[], int *n_cmd);
 void run_commands(carr* cmd[], int n_cmd);
+void add_history(carr *history[100], carr *text, int *hist_count);
 
+carr *history[100];
+int hist_count = 0;
 
 int main(){
     printf("Welcome to the terminal\n");
@@ -78,6 +57,7 @@ int main(){
     carr* text = (carr*)malloc(sizeof(carr));
     carr *cmd[1024];
     int n_cmd=0;
+
 
     carr_init(text);
     carr_alloc(text, 1024);
@@ -107,6 +87,8 @@ int main(){
         getchar();
 
         if(strlen(text->arr) == 0) continue;
+
+        add_history(history, text, &hist_count);
 
         seperate_commands(text, cmd, &n_cmd);
         
@@ -180,6 +162,24 @@ int seperate_commands(carr *text, carr *cmd[], int *n_cmd){
     return 1;
 }
 
+void add_history(carr *history[100], carr *text, int* hist_count){
+    history[*hist_count] = (carr*)malloc(sizeof(carr));
+    carr_init(history[*hist_count]);
+    carr_alloc(history[*hist_count], 1024);
+
+    carr_copy(history[*hist_count], text);
+
+    (*hist_count)+=1;
+}
+
+// void show_history(carr *history[100], int hist_count){
+void show_history(){
+    for(int i=0; i<hist_count; ++i){
+        printf("%d) %s\n", i, history[i]->arr);
+    }
+}
+
+
 void find_current_loc(carr *c){
     int n = c->n;
     while((getcwd(c->arr, c->n) == NULL) && ((c->n) < 3e4)){
@@ -237,30 +237,38 @@ void create_file(char* file_name, bool is_overwrite){
     fclose(fptr);
 }
 
-// void run_ext_command(carr* cmd[], int n_cmd){
-//     char* command[n_cmd+1];
-//     for(int i=0; i<n_cmd; ++i){
-//         command[i] = cmd[i]->arr;
-//     }
-//     command[n_cmd] = NULL;
+// NOTE that this code is replaced with a macro
 
-//     // We create a copy of the current process, which the copy would be terminated by exec
-//     pid_t pid = fork();
+void run_ext_command(carr* cmd[], int n_cmd){
+#if defined(_WIN32) || defined(_WIN64)
+    printf("Unknown command, note external bash commands are not supported in windows");
+
+#else
+    char* command[n_cmd+1];
+    for(int i=0; i<n_cmd; ++i){
+        command[i] = cmd[i]->arr;
+    }
+    command[n_cmd] = NULL;
+
+    // We create a copy of the current process, which the copy would be terminated by exec
+    pid_t pid = fork();
     
-//     if(pid == 0){
-//         // Child process
+    if(pid == 0){
+        // Child process
 
-//         // Runs the external command
-//         execvp(command[0], command);
-//     }
-//     else{
-//         // Parent process
-//         int status;
-//         // Waits for child process to finish
-//         waitpid(pid, &status, 0);
-//     }
+        // Runs the external command
+        execvp(command[0], command);
+    }
+    else{
+        // Parent process
+        int status;
+        // Waits for child process to finish
+        waitpid(pid, &status, 0);
+    }
 
-// }
+    
+#endif
+}
 
 void run_commands(carr* cmd[], int n_cmd){
     if(strcmp(cmd[0]->arr, "here") == 0){
@@ -333,8 +341,11 @@ void run_commands(carr* cmd[], int n_cmd){
         }
 
     }
+    else if(strcmp(cmd[0]->arr, "history")==0){
+        show_history();
+    }
     else{
-        run_ext_command();
+        run_ext_command(cmd, n_cmd);
     }
 }
 

@@ -52,14 +52,14 @@ I have recently gotten curious about low level systems and
 
 
 ## Future development plans
-- [ ] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
-- [ ] Implementing child processes for certain commands to protect the main process
+- [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
+- [x] Implementing child processes for certain commands to protect the main process
 - [ ] Adding bunch of error protection and edge cases as the code is NOT SAFE at all. I just disregarded all the error handling for the sake of development speed.
 - [ ] Adding a feature to read files and show their contents
 - [ ] Adding a feature to search for keywords in files (similar to `grep` in bash)
 - [ ] Adding a feature to delete files an dirs
 - [ ] Change the content of files (tricky, since I need to have some kind of text editor in the terminal)
-- [ ] A `history` command to show previous commands
+- [x] A `history` command to show previous commands
 - [ ] up/down arrow keys showing previous commands (need to implement `history` first)
 - [ ] Adding `<` and `>` for input and output redirection, I likely need to change teh current way commands are implemented which is a lot of work, but it would be cool
 - [ ] Adding `|` for piping commands, same issue as the previous one

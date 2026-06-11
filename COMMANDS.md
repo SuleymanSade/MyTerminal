@@ -16,5 +16,6 @@ create / cr --> Creates a file or directory
 MISC:
 <!-- admin Gives access to admin commands -->
 <!-- help Shows the commands to access -->
+history --> Shows all the previous commands that have been inputted in terminal, numbered
 exit / 0 --> Exits the terminal
 
