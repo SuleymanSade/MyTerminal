@@ -2,6 +2,9 @@
 ## What is This?
 This is a basic terminal application that I am coding to get familiar with low-level systesms and how terminals work. I started coding in C++ but later switched to C for more control and familiarity with the language. Below you can find a Dev Log where I included my development process and roadblocks. There is also future development plans where I listed some features I want to add. You can find all the commands I coded until now in `COMMANDS.md`
 
+Here is a very basic demo where I try out some of the commands here:
+
+
 ## Tech Stack
 - C++
   - I was limitting myself to only primary features but since I switched to C, I don't know if this is applicable, since my current version doesn't use c++
@@ -9,8 +12,6 @@ This is a basic terminal application that I am coding to get familiar with low-l
   - The programming language I am using to code the terminal
 - WSL
   - I am using Windows which I heard causes trouble when trying to navigate directories with C since it is not a Unix system. So WSL allows me to get around that without having to switch to a linux machine.
-- emscripten
-  - To convert my c code to `.wasm` in order to have a demo
 
 ## Motivation
 I have recently gotten curious about low level systems and how terminals work. So I decided to code my own terminal application to get familiar with these concepts. I also see this as a challenge since this is the first time I am working with this much memory management.
@@ -52,7 +53,7 @@ I have recently gotten curious about low level systems and how terminals work. S
 - I had to a lot of digging and found that I can use `WaitForSingleObject()` to wait for child process in windows, however when I use `fork()` I get a pid number which I cannot directly plug into `WaitForSingleObject()`, then I found `OpenProcess()` which takes pid and gives an handle that I can plug into. After gluing bunch of code together that I found online I was able to get it working.
 - I realized I was wrong with my previous comment, and `fork()` also doesn't exist in windows, so I had to do more digging. Then I figured with the scope of this project this addition would be too much work, so I will only give support for running regular bash commands in linux/mac. In order to do this i had to create a macro for the entire `run_ext_command()` function.
 - I also added a `history` command to show all previously written commands in the terminal, I am using a global variable to keep track of the history, which may not be the best approach but it works.
-- To be able to have a good demo I used `emscripten` to convert the c code to `.wasm`
+- To be able to have a good demo I used `emscripten` to convert the c code to `.wasm`, but didn't work as expected
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
