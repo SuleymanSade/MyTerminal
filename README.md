@@ -3,7 +3,7 @@
 This is a basic terminal application that I am coding to get familiar with low-level systesms and how terminals work. I started coding in C++ but later switched to C for more control and familiarity with the language. Below you can find a Dev Log where I included my development process and roadblocks. There is also future development plans where I listed some features I want to add. You can find all the commands I coded until now in `COMMANDS.md`
 
 Here is a very basic demo where I try out some of the commands here:
-
+[Watch the demo](https://youtu.be/1ABnPnfbyJc)
 
 ## Tech Stack
 - C++
