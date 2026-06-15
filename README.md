@@ -23,6 +23,10 @@ Here is a very basic demo where I try out some of the commands here:
 - Extract the `.zip` file that is in the release
 - Double click on the `.exe` file, when the blue screen pops up, click **More info** then **Run Anyway**. This should pop up a terminal that would allow you to try out.
 
+## AI use
+- This project doesn't have code that is directly written by AI
+- Through the creation of this project AI is only used to search concepts and specific methods for me to code as I am not that experienced with C. Think of it like using AI instead of Stack Overflow.
+
 ## Motivation
 I have recently gotten curious about low level systems and how terminals work. So I decided to code my own terminal application to get familiar with these concepts. I also see this as a challenge since this is the first time I am working with this much memory management.
 
