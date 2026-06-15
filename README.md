@@ -13,6 +13,16 @@ Here is a very basic demo where I try out some of the commands here:
 - WSL
   - I am using Windows which I heard causes trouble when trying to navigate directories with C since it is not a Unix system. So WSL allows me to get around that without having to switch to a linux machine.
 
+## System Requirements and Installation
+### System req
+- OS: Windows 11 (10 also should work, but not tested)
+- Environment: Powershell, Windows Terminal, Command Prompt
+- Dep: none
+
+### First run
+- Extract the `.zip` file that is in the release
+- Double click on the `.exe` file, when the blue screen pops up, click **More info** then **Run Anyway**. This should pop up a terminal that would allow you to try out.
+
 ## Motivation
 I have recently gotten curious about low level systems and how terminals work. So I decided to code my own terminal application to get familiar with these concepts. I also see this as a challenge since this is the first time I am working with this much memory management.
 
