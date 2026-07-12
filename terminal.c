@@ -38,7 +38,7 @@ typedef struct
 } carr;
 
 // prototypes
-void print_err(const char msg[]);
+void print_err(const char msg[], const char type[], const char location[]);
 void carr_init(carr *c);
 void carr_alloc(carr *c, int n);
 void carr_delete(carr *c);
@@ -116,15 +116,15 @@ int seperate_commands(carr *text, carr *cmd[], int *n_cmd){
     while(text->arr[i] != '\0' && i<1024){
         // Error checks for safety
         if(cmd_col >= 1024){
-            print_err("the lenght of a single command exceeds 1024 chars");
+            print_err("the lenght of a single command exceeds 1024 chars", "out of bounds", "seperate_commands()");
             return 0;
         }
         if(cmd_row >= 1024){
-            print_err("the lenght of number of commands exceeds 1024 chars"); 
+            print_err("the lenght of number of commands exceeds 1024 chars", "out of bounds", "seperate_commands()"); 
             return 0;
         }
         if(i >= 1024){
-            print_err("the lenght of the entire line exceeds 1024 chars, or missing '\\0'");
+            print_err("the lenght of the entire line exceeds 1024 chars, or missing '\\0'", "out of bounds", "seperate_commands()");
             return 0;
         }
         
@@ -270,6 +270,40 @@ void run_ext_command(carr* cmd[], int n_cmd){
 #endif
 }
 
+void read_file(carr fileName, carr fileContent[]){ 
+    FILE *fileptr = fopen(fileName.arr, "r");
+    
+    // No file found
+    if(fileptr == NULL){
+        // I needed to use a buffer to combine multiple strings and use it as an arg to `print_err()`
+        char buf[fileName.n*2];
+        strcat(buf, "unable to find the file ");
+        strcat(buf, fileName.arr);
+
+        print_err(buf, "invalid filename", "read_file()");
+        strcpy(fileContent[0].arr, "");
+        return ;
+    }
+
+    // File found
+    
+    int n = fileContent[0].n;
+
+    carr lineInput;
+    carr_alloc(&lineInput, n);
+    int i=0;
+
+    // Loop goes through the file and puts each line to the filecontent arr
+    while(fgets(fileContent[i].arr, n, fileptr) != NULL){
+        i+=1;
+    }
+
+    strcpy(fileContent[i].arr, "\0");
+
+    carr_delete(&lineInput);
+    fclose(fileptr);
+}
+
 void run_commands(carr* cmd[], int n_cmd){
     if(strcmp(cmd[0]->arr, "here") == 0){
         carr* pos = (carr*)malloc(sizeof(carr));
@@ -344,14 +378,32 @@ void run_commands(carr* cmd[], int n_cmd){
     else if(strcmp(cmd[0]->arr, "history")==0){
         show_history();
     }
+    else if(strcmp(cmd[0]->arr, "read")==0){
+        carr fileContent[1024];
+
+        for(int i=0; i<1024; ++i){
+            carr_alloc(&(fileContent[i]), 1024);
+        }
+        
+        read_file(*cmd[1], fileContent);
+
+        for(int i=0; i<1024 || strcmp(fileContent[i].arr, "\0")==0; ++i){
+            printf("%s", fileContent[i].arr);
+        }
+        printf("\n");
+
+        
+    }
     else{
         run_ext_command(cmd, n_cmd);
     }
 }
 
-void print_err(const char msg[]){
-    fprintf(stderr, "%s", msg);
+
+void print_err(const char msg[], const char type[], const char location[]){
+    fprintf(stderr, "a %s error occured in %s: %s", type, location, msg);
 }
+
 
 /*
 All the carr modification/creation functions

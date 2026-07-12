@@ -13,6 +13,10 @@ create / cr --> Creates a file or directory
 - param2: the name of the file or directory to create
 - param3(optional): whether to overwrite file if the file already exists, `yes` or `no`, default to `no`, only used for file creation not for directory
 
+FILE READ/WRITE:
+read --> Prints the contents of a file
+- param1: the name of the file
+
 MISC:
 history --> Shows all the previous commands that have been inputted in terminal, numbered
 exit / 0 --> Exits the terminal

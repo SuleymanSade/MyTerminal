@@ -69,11 +69,16 @@ I have recently gotten curious about low level systems and how terminals work. S
 - I also added a `history` command to show all previously written commands in the terminal, I am using a global variable to keep track of the history, which may not be the best approach but it works.
 - To be able to have a good demo I used `emscripten` to convert the c code to `.wasm`, but didn't work as expected
 
+### 7/6- :
+- Implemented a new error printing format including: type of error, the function/location the error occured in and error mmessage. This way I am aiming to have cleaner and easier to debug errors.
+- I added reading the contents of files usign read command, I made it into a command that stores the read values so that in future I can implement searching for specific words and other features directly using `read_file()` function.
+- Read command also prints the contents of the file chosen.
+
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
 - [x] Implementing child processes for certain commands to protect the main process
 - [ ] Adding bunch of error protection and edge cases as the code is NOT SAFE at all. I just disregarded all the error handling for the sake of development speed.
-- [ ] Adding a feature to read files and show their contents
+- [x] Adding a feature to read files and show their contents
 - [ ] Adding a feature to search for keywords in files (similar to `grep` in bash)
 - [ ] Adding a feature to delete files an dirs
 - [ ] Change the content of files (tricky, since I need to have some kind of text editor in the terminal)
