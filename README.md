@@ -73,6 +73,10 @@ I have recently gotten curious about low level systems and how terminals work. S
 - Implemented a new error printing format including: type of error, the function/location the error occured in and error mmessage. This way I am aiming to have cleaner and easier to debug errors.
 - I added reading the contents of files usign read command, I made it into a command that stores the read values so that in future I can implement searching for specific words and other features directly using `read_file()` function.
 - Read command also prints the contents of the file chosen.
+- I was trying to overload my `print_err()` function, but then I just learned it doesn't work in C. There are some alternative ways, but I will probably have a different name for each variation.
+- When trying to implement searching for a keyword, I figured 2 options. One if to search within a file (using `read_file()` I previously created), and searching directly in the input. Since searching in the terminal input would require quotation marks ("") which is not currently supported, I will implement it once I change my input system.
+- My algorithm for finding the searched keyword is to go through each line and try to match the word char by char and abort each time it fails and moves to the next char as the start point.
+- I learned that it is possible to color the output stream which would allow to print searched keyword to be in different color. Just an idea, might be developed in future
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
@@ -87,3 +91,5 @@ I have recently gotten curious about low level systems and how terminals work. S
 - [ ] Adding `<` and `>` for input and output redirection, I likely need to change teh current way commands are implemented which is a lot of work, but it would be cool
 - [ ] Adding `|` for piping commands, same issue as the previous one
 - [ ] Adding `&` for running commands in the background, same issue as the previous one, likely can be done with `fixed()` and `exec()` though
+- [ ] Adding color to the terminal output, like when `search` is used it can color the keyword
+- [ ] instead of using `get_line()`, process each input as they are typed ot have functionality such as up or down arrow key copying previous input. Very fundamental change, and might be needed to add certain features

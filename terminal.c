@@ -38,7 +38,10 @@ typedef struct
 } carr;
 
 // prototypes
-void print_err(const char msg[], const char type[], const char location[]);
+void print_err_all(const char msg[], const char type[], const char location[]);
+void print_err_loc(const char msg[], const char location[]);
+void print_err_msg(const char msg[]);
+
 void carr_init(carr *c);
 void carr_alloc(carr *c, int n);
 void carr_delete(carr *c);
@@ -116,15 +119,15 @@ int seperate_commands(carr *text, carr *cmd[], int *n_cmd){
     while(text->arr[i] != '\0' && i<1024){
         // Error checks for safety
         if(cmd_col >= 1024){
-            print_err("the lenght of a single command exceeds 1024 chars", "out of bounds", "seperate_commands()");
+            print_err_all("the lenght of a single command exceeds 1024 chars", "out of bounds", "seperate_commands()");
             return 0;
         }
         if(cmd_row >= 1024){
-            print_err("the lenght of number of commands exceeds 1024 chars", "out of bounds", "seperate_commands()"); 
+            print_err_all("the lenght of number of commands exceeds 1024 chars", "out of bounds", "seperate_commands()"); 
             return 0;
         }
         if(i >= 1024){
-            print_err("the lenght of the entire line exceeds 1024 chars, or missing '\\0'", "out of bounds", "seperate_commands()");
+            print_err_all("the lenght of the entire line exceeds 1024 chars, or missing '\\0'", "out of bounds", "seperate_commands()");
             return 0;
         }
         
@@ -270,8 +273,10 @@ void run_ext_command(carr* cmd[], int n_cmd){
 #endif
 }
 
-void read_file(carr fileName, carr fileContent[]){ 
+int read_file(carr fileName, carr fileContent[]){ 
     FILE *fileptr = fopen(fileName.arr, "r");
+
+    int numLinesRead=0;
     
     // No file found
     if(fileptr == NULL){
@@ -280,9 +285,9 @@ void read_file(carr fileName, carr fileContent[]){
         strcat(buf, "unable to find the file ");
         strcat(buf, fileName.arr);
 
-        print_err(buf, "invalid filename", "read_file()");
+        print_err_all(buf, "invalid filename", "read_file()");
         strcpy(fileContent[0].arr, "");
-        return ;
+        return numLinesRead;
     }
 
     // File found
@@ -291,17 +296,58 @@ void read_file(carr fileName, carr fileContent[]){
 
     carr lineInput;
     carr_alloc(&lineInput, n);
-    int i=0;
 
     // Loop goes through the file and puts each line to the filecontent arr
-    while(fgets(fileContent[i].arr, n, fileptr) != NULL){
-        i+=1;
+    while(fgets(fileContent[numLinesRead].arr, n, fileptr) != NULL){
+        numLinesRead+=1;
     }
 
-    strcpy(fileContent[i].arr, "\0");
+    strcpy(fileContent[numLinesRead].arr, "\0");
 
     carr_delete(&lineInput);
     fclose(fileptr);
+
+    return numLinesRead;
+}
+
+void find_phrases(carr searchPhrase, carr fileContent[], carr foundLines[], int numLinesRead){
+    int lineIndex = 0, foundLinesIndex = 0;
+    int wordLen=0;
+    for(;wordLen<searchPhrase.n 
+        && searchPhrase.arr[wordLen] != '\0';wordLen++){}
+    
+    if(wordLen == 0){
+        print_err_loc("The search phrase is empty (\'\')", "find_phrases()");
+        return ;
+    }
+
+    while(lineIndex<numLinesRead){
+        bool isFound = false;
+        // The upper limit is based on the last point where searchPhrase can start based on its length
+        for(int i=0; i<(fileContent[lineIndex].n - wordLen) && !isFound && fileContent[lineIndex].arr[i] != '\0'; i++){
+            // Tries to match searchPhrase from each letter
+            // Goes back whenever a mismatch happens
+            for(int j=0; j<(wordLen) && fileContent[lineIndex].arr[j] != '\0'; ++j){
+                if(fileContent[lineIndex].arr[i+j] != searchPhrase.arr[j]){
+                    break;
+                }
+
+                if(j == wordLen-1){
+                    isFound = true;
+                }
+            }
+        }
+
+        if(isFound){
+            strcpy(
+                foundLines[foundLinesIndex].arr,
+                fileContent[lineIndex].arr
+            );
+            foundLinesIndex+=1;
+        }
+
+        lineIndex+=1;
+    }
 }
 
 void run_commands(carr* cmd[], int n_cmd){
@@ -385,14 +431,54 @@ void run_commands(carr* cmd[], int n_cmd){
             carr_alloc(&(fileContent[i]), 1024);
         }
         
-        read_file(*cmd[1], fileContent);
+        int numLinesRead = read_file(*cmd[1], fileContent);
 
-        for(int i=0; i<1024 || strcmp(fileContent[i].arr, "\0")==0; ++i){
+        for(int i=0; i<numLinesRead; ++i){
             printf("%s", fileContent[i].arr);
         }
         printf("\n");
 
         
+    }
+    else if(strcmp(cmd[0]->arr, "search")==0){
+        carr searchPhrase = {0};
+        carr_init(&searchPhrase);
+        carr_alloc(&searchPhrase, 1024);
+        carr_copy(&searchPhrase, cmd[1]);
+
+        if(strcmp(cmd[2]->arr, "in") != 0){
+            print_err_loc("Has to be searched in a file for now, will be changed in future", "run_commands() in search if statement");
+            return ;
+        }
+        
+        carr fileContent[1024];
+
+        for(int i=0; i<1024; ++i){
+            // carr_init(&fileContent[i]);
+            carr_alloc(&fileContent[i], 1024);
+        }
+
+        int numLinesRead = read_file(*cmd[3], fileContent);
+
+        carr foundLines[1024];
+        for(int i=0; i<1024; ++i){
+            // carr_init(&foundLines[i]);
+            carr_alloc(&foundLines[i], 1024);
+        }
+
+        find_phrases(searchPhrase, fileContent, foundLines, numLinesRead);
+        // for(int i=0; i<1024; ++i){
+        for(int i=0; i<1024 && strcmp(foundLines[i].arr,  "\0")!=0; ++i){
+            printf("%d) %s", i, foundLines[i].arr);
+        }
+
+        carr_delete(&searchPhrase);
+        for(int i=0; i<1024; ++i){
+            carr_delete(&fileContent[i]);
+            carr_delete(&foundLines[i]);
+        }
+
+        printf("\n");
     }
     else{
         run_ext_command(cmd, n_cmd);
@@ -400,10 +486,17 @@ void run_commands(carr* cmd[], int n_cmd){
 }
 
 
-void print_err(const char msg[], const char type[], const char location[]){
+void print_err_all(const char msg[], const char type[], const char location[]){
     fprintf(stderr, "a %s error occured in %s: %s", type, location, msg);
 }
 
+void print_err_loc(const char msg[], const char location[]){
+    fprintf(stderr, "an error occured in %s: %s", location, msg);
+}
+
+void print_err_msg(const char msg[]){
+    fprintf(stderr, "an error occured in: %s", msg);
+}
 
 /*
 All the carr modification/creation functions
@@ -432,7 +525,7 @@ void carr_copy(carr *c1, carr *c2){
     if(c1->n < c2->n){
         // TODO: WIP
     }
-    c1->n = 0;
+    c1->n = c2->n;
 
     if(c2->arr == NULL){
         c1->n=0;
