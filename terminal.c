@@ -62,19 +62,16 @@ int main(){
     int n_cmd=0;
 
 
-    carr_init(text);
     carr_alloc(text, 1024);
     
     
     do{
         cmd[0] = (carr*)malloc(sizeof(carr));
-        carr_init(cmd[0]);
         carr_alloc(cmd[0], 1024);
 
         n_cmd = 0;
 
         carr* curr = (carr*)malloc(sizeof(carr));
-        carr_init(curr);
         carr_alloc(curr, 1024);
 
         find_current_loc(curr);
@@ -106,6 +103,8 @@ int main(){
 
     } while(strcmp(text->arr, "exit") && strcmp(text->arr, "0"));
 
+    carr_delete(text);
+    free(text);
 
     return 0;
 }
@@ -144,7 +143,6 @@ int seperate_commands(carr *text, carr *cmd[], int *n_cmd){
                 // Need to allocate memory address for the carr* 
                 cmd[cmd_row] = (carr*)malloc(sizeof(carr));
 
-                carr_init(cmd[cmd_row]);
                 carr_alloc(cmd[cmd_row], 1024);
                 *n_cmd+=1;
             }
@@ -168,7 +166,6 @@ int seperate_commands(carr *text, carr *cmd[], int *n_cmd){
 
 void add_history(carr *history[100], carr *text, int* hist_count){
     history[*hist_count] = (carr*)malloc(sizeof(carr));
-    carr_init(history[*hist_count]);
     carr_alloc(history[*hist_count], 1024);
 
     carr_copy(history[*hist_count], text);
@@ -220,10 +217,15 @@ void list_content(carr content[], carr target_dir, int N){
             i-=1;
         }
         else{
-            printf("%s\n", entry->d_name);
+            // printf("%s\n", entry->d_name);
+            carr_alloc(&content[i], 1024);
+            strcpy(content[i].arr, entry->d_name);
         }
         i+=1;
     }
+
+    carr_alloc(&content[i], 1024);
+    strcpy(content[i].arr, "\0");
 
     closedir(dir);
 }
@@ -355,7 +357,6 @@ void find_phrases(carr searchPhrase, carr fileContent[], carr foundLines[], int 
 void run_commands(carr* cmd[], int n_cmd){
     if(strcmp(cmd[0]->arr, "here") == 0){
         carr* pos = (carr*)malloc(sizeof(carr));
-        carr_init(pos);
         carr_alloc(pos, 1024);
         find_current_loc(pos);
 
@@ -392,6 +393,15 @@ void run_commands(carr* cmd[], int n_cmd){
         carr content[1024];
 
         list_content(content, target_dir, N);
+        int i=0;
+
+        for(i=0; i<1024 && strcmp(content[i].arr, "\0")!=0; ++i){
+            printf("%s\n", content[i].arr);
+            carr_delete(&content[i]);
+        }
+
+        carr_delete(&content[i]); // clears the extra "\0" at the end
+
         carr_delete(&target_dir);
     }
     else if(strcmp(cmd[0]->arr, "create") == 0 || strcmp(cmd[0]->arr, "cr") == 0){
@@ -434,6 +444,7 @@ void run_commands(carr* cmd[], int n_cmd){
 
         for(int i=0; i<numLinesRead; ++i){
             printf("%s", fileContent[i].arr);
+            carr_delete(&fileContent[i]);
         }
         printf("\n");
 
@@ -441,12 +452,12 @@ void run_commands(carr* cmd[], int n_cmd){
     }
     else if(strcmp(cmd[0]->arr, "search")==0){
         carr searchPhrase = {0};
-        carr_init(&searchPhrase);
         carr_alloc(&searchPhrase, 1024);
         carr_copy(&searchPhrase, cmd[1]);
 
         if(strcmp(cmd[2]->arr, "in") != 0){
             print_err_loc("Has to be searched in a file for now, will be changed in future", "run_commands() in search if statement");
+            carr_delete(&searchPhrase);
             return ;
         }
         
@@ -462,7 +473,6 @@ void run_commands(carr* cmd[], int n_cmd){
         carr foundLines[1024];
         for(int i=0; i<1024; ++i){
             // carr_init(&foundLines[i]);
-            carr_init(&foundLines[i]);
             carr_alloc(&foundLines[i], 1024);
         }
 
@@ -487,15 +497,15 @@ void run_commands(carr* cmd[], int n_cmd){
 
 
 void print_err_all(const char msg[], const char type[], const char location[]){
-    fprintf(stderr, "a %s error occured in %s: %s", type, location, msg);
+    fprintf(stderr, "a %s error occured in %s: %s\n", type, location, msg);
 }
 
 void print_err_loc(const char msg[], const char location[]){
-    fprintf(stderr, "an error occured in %s: %s", location, msg);
+    fprintf(stderr, "an error occured in %s: %s\n", location, msg);
 }
 
 void print_err_msg(const char msg[]){
-    fprintf(stderr, "an error occured in: %s", msg);
+    fprintf(stderr, "an error occured in: %s\n", msg);
 }
 
 /*
