@@ -16,6 +16,10 @@ create / cr --> Creates a file or directory
 FILE READ/WRITE:
 read --> Prints the contents of a file
 - param1: the name of the file
+search --> Searches a specific phrase in a file
+- param1: search phrase
+- param2: "in"
+- param3: the file name
 
 MISC:
 history --> Shows all the previous commands that have been inputted in terminal, numbered
