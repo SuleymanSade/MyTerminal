@@ -85,6 +85,8 @@ I have recently gotten curious about low level systems and how terminals work. S
 - The previous point also made me realize that I should not directly capture that much space in the memory and rather dynamically allocate space as I need. This will require some in depth changes. Maybe rewriting half the code but necessery to keep the development going.
 - Something that makes my code actually great is using pointers for the char arrays of each sentence. This way instead of capturing a sequential memory space, each sentence can fit in to the holes in the memory. I don't know if this is factually true, just FYI.
 - There is a lot to improve. But according to debugging there are no more memory leaks, I tried every command that I yet coded.
+- I realized that using a linked list for the `history` would remove the limit on how many commands that can be stored, as each command can just be added as a node at the start. But for now I will just clear the memory leak that `valgrind` found
+- I used valgrind and did a full test, I found 3MB of memory leak which I fixed them all
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
@@ -101,3 +103,4 @@ I have recently gotten curious about low level systems and how terminals work. S
 - [ ] Adding `&` for running commands in the background, same issue as the previous one, likely can be done with `fixed()` and `exec()` though
 - [ ] Adding color to the terminal output, like when `search` is used it can color the keyword
 - [ ] instead of using `get_line()`, process each input as they are typed ot have functionality such as up or down arrow key copying previous input. Very fundamental change, and might be needed to add certain features
+- Implement a linked list for `history`

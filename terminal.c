@@ -106,6 +106,11 @@ int main(){
     carr_delete(text);
     free(text);
 
+    // OS should auto-clear this at exit, but added just in case
+    for(int i=0; i<(hist_count); ++i){
+        carr_delete(history[i]);
+    }
+
     return 0;
 }
 
@@ -417,7 +422,7 @@ void run_commands(carr* cmd[], int n_cmd){
             else{
                 
                 // lowercase the whole word
-                for(int i=0; i<cmd[3]->n; ++i){
+                for(int i=0; i<cmd[3]->n && cmd[3]->arr[i] != '\0'; ++i){
                     cmd[3]->arr[i] = tolower(cmd[3]->arr[i]);
                 }
 
@@ -442,8 +447,12 @@ void run_commands(carr* cmd[], int n_cmd){
         
         int numLinesRead = read_file(*cmd[1], fileContent);
 
-        for(int i=0; i<numLinesRead; ++i){
-            printf("%s", fileContent[i].arr);
+        for(int i=0; i<1024; ++i){
+            // Only prints the found ones
+            if(i<numLinesRead)
+                printf("%s", fileContent[i].arr);
+
+            // Clear the whole thing
             carr_delete(&fileContent[i]);
         }
         printf("\n");
