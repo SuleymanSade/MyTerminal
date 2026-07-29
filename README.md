@@ -69,7 +69,7 @@ I have recently gotten curious about low level systems and how terminals work. S
 - I also added a `history` command to show all previously written commands in the terminal, I am using a global variable to keep track of the history, which may not be the best approach but it works.
 - To be able to have a good demo I used `emscripten` to convert the c code to `.wasm`, but didn't work as expected
 
-### 7/6- :
+### 7/6-7/28:
 - Implemented a new error printing format including: type of error, the function/location the error occured in and error mmessage. This way I am aiming to have cleaner and easier to debug errors.
 - I added reading the contents of files usign read command, I made it into a command that stores the read values so that in future I can implement searching for specific words and other features directly using `read_file()` function.
 - Read command also prints the contents of the file chosen.
@@ -77,6 +77,8 @@ I have recently gotten curious about low level systems and how terminals work. S
 - When trying to implement searching for a keyword, I figured 2 options. One if to search within a file (using `read_file()` I previously created), and searching directly in the input. Since searching in the terminal input would require quotation marks ("") which is not currently supported, I will implement it once I change my input system.
 - My algorithm for finding the searched keyword is to go through each line and try to match the word char by char and abort each time it fails and moves to the next char as the start point.
 - I learned that it is possible to color the output stream which would allow to print searched keyword to be in different color. Just an idea, might be developed in future
+- The search command was not working over and over again and I was confused. After I did some search on better debugging methods, I took the notes that are in [./Notes.md](./Notes.md). With that debugging method I was able to find my for loop trying to access 1025th element of a size 1024 `found_lines` array. And the reason was my program searching for "\0" to stop the for loop but I forgot to add that to my last used element. So it was comparint it to garbage data.
+- The use of these debugging methods also allowed to cover memory leaks that I had from day 1. I found a memory leak in my `text` varible that is the data from the console.
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)

@@ -106,6 +106,7 @@ int main(){
 
     } while(strcmp(text->arr, "exit") && strcmp(text->arr, "0"));
 
+
     return 0;
 }
 
@@ -202,11 +203,10 @@ void change_dir(carr* new_dir){
     else{
         chdir(new_dir->arr);
     }
-
-    int i=0;
 }
 
 void list_content(carr content[], carr target_dir, int N){
+    //TODO: forgot to implement content[], it is not getting any input atp
     DIR* dir = opendir(target_dir.arr);
 
     // target_dir = (target_dir.get_arr() == nullptr) ? "." : target_dir; 
@@ -348,6 +348,8 @@ void find_phrases(carr searchPhrase, carr fileContent[], carr foundLines[], int 
 
         lineIndex+=1;
     }
+
+    strcpy(foundLines[foundLinesIndex].arr, "\0");
 }
 
 void run_commands(carr* cmd[], int n_cmd){
@@ -403,17 +405,14 @@ void run_commands(carr* cmd[], int n_cmd){
                 create_file(cmd[2]->arr, false);
             }
             else{
-                bool isOverwrite = false;
+                
                 // lowercase the whole word
                 for(int i=0; i<cmd[3]->n; ++i){
                     cmd[3]->arr[i] = tolower(cmd[3]->arr[i]);
                 }
-                if(strcmp(cmd[3]->arr, "yes") == 0 || strcmp(cmd[3]->arr, "y") == 0){
-                    create_file(cmd[2]->arr, true);
-                }
-                else{
-                    create_file(cmd[2]->arr, false);
-                }
+
+                bool isOverwrite = strcmp(cmd[3]->arr, "yes") == 0 || strcmp(cmd[3]->arr, "y") == 0;
+                create_file(cmd[2]->arr, isOverwrite);
             }
         }
         else if(strcmp(cmd[1]->arr, "folder") == 0 || strcmp(cmd[1]->arr, "dir") == 0 || strcmp(cmd[1]->arr, "directory") == 0){
@@ -463,12 +462,13 @@ void run_commands(carr* cmd[], int n_cmd){
         carr foundLines[1024];
         for(int i=0; i<1024; ++i){
             // carr_init(&foundLines[i]);
+            carr_init(&foundLines[i]);
             carr_alloc(&foundLines[i], 1024);
         }
 
         find_phrases(searchPhrase, fileContent, foundLines, numLinesRead);
-        // for(int i=0; i<1024; ++i){
-        for(int i=0; i<1024 && strcmp(foundLines[i].arr,  "\0")!=0; ++i){
+
+        for(int i=0; i<1024 && foundLines[i].arr[0] != '\0'; ++i){
             printf("%d) %s", i, foundLines[i].arr);
         }
 
