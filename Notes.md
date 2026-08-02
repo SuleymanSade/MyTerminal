@@ -26,4 +26,4 @@ These are mostly that I wrote for myself, but I am going to make it public if an
 
 when using valgrind
 
-`gcc -Wall -Wextra -g terminal.c -o terminal && valgrind --leak-check=full./terminal`
+`gcc -Wall -Wextra -g terminal.c -o terminal && valgrind --leak-check=full ./terminal`

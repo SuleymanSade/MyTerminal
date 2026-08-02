@@ -6,6 +6,16 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+#include "carr.h"
+
+// Colors for terminal output, `C_` for color
+#define C_RESET   "\033[0m"
+#define C_RED     "\033[31m"
+#define C_GREEN   "\033[32m"
+#define C_YELLOW  "\033[33m"
+#define C_BLUE    "\033[34m"
+#define C_MAGENTA "\033[35m"
+#define C_CYAN    "\033[36m"
 
 // We are using this approach to prevent incompatibility between linux and windows file creation
 // In Windows the header and the function usage are different than that of linux
@@ -28,527 +38,103 @@
     #define create_dir(path) mkdir(path, 0777)
 #endif
     
-
-// For convenience this struct stores the size of the array
-// And is standarized
-typedef struct
-{
-    char *arr;
-    int n;
-} carr;
+// `carr` and `carr_list` struct and their functions has been moved to `carr.h` and `carr.c`
 
 // prototypes
 void print_err_all(const char msg[], const char type[], const char location[]);
 void print_err_loc(const char msg[], const char location[]);
 void print_err_msg(const char msg[]);
 
-void carr_init(carr *c);
-void carr_alloc(carr *c, int n);
-void carr_delete(carr *c);
-void carr_copy(carr *c1, carr *c2);
+// command utils
 void find_current_loc(carr *c);
-int seperate_commands(carr *text, carr *cmd[], int *n_cmd);
-void run_commands(carr* cmd[], int n_cmd);
-void add_history(carr *history[100], carr *text, int *hist_count);
+void add_history(carr_list* history, carr command);
 
-carr *history[100];
-int hist_count = 0;
-
+// carr *history[100];
 int main(){
-    printf("Welcome to the terminal\n");
-    printf("Type \"exit\" or \"0\" to exit the terminal\n");
-    carr* text = (carr*)malloc(sizeof(carr));
-    carr *cmd[1024];
-    int n_cmd=0;
+    printf("Welcome to the my shell\n");
+    printf("Type \"exit\" or \"0\" to exit the shell\n");
 
+    carr_list history;
+    carr_list_alloc(&history, 100);
 
-    carr_alloc(text, 1024);
-    
-    
+    carr text;
+    carr_alloc(&text, 1024);
+
+    carr_list cmd;
+    carr_list_alloc(&cmd, 1024);
+
     do{
-        cmd[0] = (carr*)malloc(sizeof(carr));
-        carr_alloc(cmd[0], 1024);
+        carr_list_clear(&cmd);
+        carr_alloc(&cmd.list[0], 1024);
+        cmd.used +=1;
 
-        n_cmd = 0;
+        carr curr_loc;
+        carr_alloc(&curr_loc, 1024);
+        find_current_loc(&curr_loc);
 
-        carr* curr = (carr*)malloc(sizeof(carr));
-        carr_alloc(curr, 1024);
-
-        find_current_loc(curr);
-        
-        printf("coolshell: %s> ", (curr->arr));
-        carr_delete(curr);
-        free(curr);
+        printf(C_BLUE "myshell: %s> " C_RESET, curr_loc.arr);
+        carr_delete(&curr_loc);
 
         // Reads until reaching "\n"
         // To leave space for '\0' needs to input one less than 1024
-        scanf("%1023[^\n]", text->arr);
+        scanf("%1023[^\n]", text.arr);
+        text.used = strlen(text.arr) + 1; // +1 is for '\0'
+
         // Cleans the leftover newline from the previous input
         getchar();
 
-        if(strlen(text->arr) == 0) continue;
+        if(text.used == 0) continue;
 
-        add_history(history, text, &hist_count);
+        add_history(&history, text);
+        // LEFT!!!!!!!!!!!!
 
-        seperate_commands(text, cmd, &n_cmd);
+        // seperate_commands(text, cmd);
         
-        run_commands(cmd, n_cmd);
+        // run_commands(cmd);
 
-        for(int i=0; i<n_cmd; ++i){
-            // Deletes the array
-            carr_delete(cmd[i]);
-            // Deletes the memory address of the carr object itself
-            free(cmd[i]);
-        }
+    } while(strcmp(text.arr, "exit") && strcmp(text.arr, "0"));
 
-    } while(strcmp(text->arr, "exit") && strcmp(text->arr, "0"));
-
-    carr_delete(text);
-    free(text);
-
-    // OS should auto-clear this at exit, but added just in case
-    for(int i=0; i<(hist_count); ++i){
-        carr_delete(history[i]);
-    }
-
-    return 0;
-}
-
-/*
-* Returns: bool
-    * true: successfully seperated
-    * false: unsuccessful operation
-*/
-int seperate_commands(carr *text, carr *cmd[], int *n_cmd){
-    int i=0, cmd_row=0, cmd_col=0;
-    while(text->arr[i] != '\0' && i<1024){
-        // Error checks for safety
-        if(cmd_col >= 1024){
-            print_err_all("the lenght of a single command exceeds 1024 chars", "out of bounds", "seperate_commands()");
-            return 0;
-        }
-        if(cmd_row >= 1024){
-            print_err_all("the lenght of number of commands exceeds 1024 chars", "out of bounds", "seperate_commands()"); 
-            return 0;
-        }
-        if(i >= 1024){
-            print_err_all("the lenght of the entire line exceeds 1024 chars, or missing '\\0'", "out of bounds", "seperate_commands()");
-            return 0;
-        }
-        
-        // Seperates by spaces
-        if(text->arr[i] == ' '){
-            // The reason for this additional condition check is to disregard double spaces as a single space 
-            // so it doesn't impact the command seperation
-            if(cmd_col != 0){
-                cmd[cmd_row]->arr[cmd_col] = '\0'; // End of a char array 
-                cmd_row +=1;
-                cmd_col = 0;
-
-                // Need to allocate memory address for the carr* 
-                cmd[cmd_row] = (carr*)malloc(sizeof(carr));
-
-                carr_alloc(cmd[cmd_row], 1024);
-                *n_cmd+=1;
-            }
-        }
-        else{
-            cmd[cmd_row]->arr[cmd_col] = text->arr[i];
-            cmd_col+=1;
-        }
-
-        i+=1;
-    }
-
-    (*n_cmd) +=1;
-    if(cmd_col > 0){
-        cmd[cmd_row]->arr[cmd_col] = '\0'; // End of a char array 
-    }
-
+    // Clear everything after exit
+    carr_list_delete(&history);
+    carr_list_delete(&cmd);
+    carr_delete(&text);
 
     return 1;
 }
 
-void add_history(carr *history[100], carr *text, int* hist_count){
-    history[*hist_count] = (carr*)malloc(sizeof(carr));
-    carr_alloc(history[*hist_count], 1024);
-
-    carr_copy(history[*hist_count], text);
-
-    (*hist_count)+=1;
-}
-
-// void show_history(carr *history[100], int hist_count){
-void show_history(){
-    for(int i=0; i<hist_count; ++i){
-        printf("%d) %s\n", i, history[i]->arr);
-    }
-}
-
-
 void find_current_loc(carr *c){
-    int n = c->n;
-    while((getcwd(c->arr, c->n) == NULL) && ((c->n) < 3e4)){
+    int cap = c->capacity;
+    while((getcwd(c->arr, c->capacity) == NULL) && ((c->capacity) < 3e4)){
         // doubles the size of buffer if it doesn't fit the leght of abs_path
         // hard stop at 3e4 as a safety net
-        n*=2;
+        cap*=2;
         carr_delete(c);
-        carr_alloc(c, n);
-    }   
+        carr_alloc(c, cap);
+    }
+
+    c->used = strlen(c->arr);
 }
 
-void change_dir(carr* new_dir){
-    // const carr curr = find_current_loc();
-    if(strcmp(new_dir->arr, "out") == 0){
-        chdir("..");
+void add_history(carr_list* history, carr command){
+    // If the history's cap is not large enough, double it
+    if(history->capacity <= history->used){
+        history->list = realloc(
+            history->list,
+            history->capacity*2
+        );
+        history->capacity*=2;
     }
-    else{
-        chdir(new_dir->arr);
-    }
-}
 
-void list_content(carr content[], carr target_dir, int N){
-    //TODO: forgot to implement content[], it is not getting any input atp
-    DIR* dir = opendir(target_dir.arr);
-
-    // target_dir = (target_dir.get_arr() == nullptr) ? "." : target_dir; 
-
-    struct dirent* entry;
+    carr_alloc(&history->list[history->used], command.used);
     
-    int i=0;
-    while(i<N && (entry = readdir(dir)) != NULL){
-        // Hides the hidden files
-        if(entry->d_name[0] == '.'){
-            i-=1;
-        }
-        else{
-            // printf("%s\n", entry->d_name);
-            carr_alloc(&content[i], 1024);
-            strcpy(content[i].arr, entry->d_name);
-        }
-        i+=1;
-    }
-
-    carr_alloc(&content[i], 1024);
-    strcpy(content[i].arr, "\0");
-
-    closedir(dir);
-}
-
-void create_file(char* file_name, bool is_overwrite){
-    FILE *fptr;
-    if(is_overwrite){
-        fptr = fopen(file_name, "w");
-    }
-    else{
-        fptr = fopen(file_name, "a");
-    }
-
-    fclose(fptr);
-}
-
-// NOTE that this code is replaced with a macro
-
-void run_ext_command(carr* cmd[], int n_cmd){
-#if defined(_WIN32) || defined(_WIN64)
-    printf("Unknown command, note external bash commands are not supported in windows");
-
-#else
-    char* command[n_cmd+1];
-    for(int i=0; i<n_cmd; ++i){
-        command[i] = cmd[i]->arr;
-    }
-    command[n_cmd] = NULL;
-
-    // We create a copy of the current process, which the copy would be terminated by exec
-    pid_t pid = fork();
-    
-    if(pid == 0){
-        // Child process
-
-        // Runs the external command
-        execvp(command[0], command);
-    }
-    else{
-        // Parent process
-        int status;
-        // Waits for child process to finish
-        waitpid(pid, &status, 0);
-    }
-
-    
-#endif
-}
-
-int read_file(carr fileName, carr fileContent[]){ 
-    FILE *fileptr = fopen(fileName.arr, "r");
-
-    int numLinesRead=0;
-    
-    // No file found
-    if(fileptr == NULL){
-        // I needed to use a buffer to combine multiple strings and use it as an arg to `print_err()`
-        char buf[fileName.n*2];
-        strcat(buf, "unable to find the file ");
-        strcat(buf, fileName.arr);
-
-        print_err_all(buf, "invalid filename", "read_file()");
-        strcpy(fileContent[0].arr, "");
-        return numLinesRead;
-    }
-
-    // File found
-    
-    int n = fileContent[0].n;
-
-    carr lineInput;
-    carr_alloc(&lineInput, n);
-
-    // Loop goes through the file and puts each line to the filecontent arr
-    while(fgets(fileContent[numLinesRead].arr, n, fileptr) != NULL){
-        numLinesRead+=1;
-    }
-
-    strcpy(fileContent[numLinesRead].arr, "\0");
-
-    carr_delete(&lineInput);
-    fclose(fileptr);
-
-    return numLinesRead;
-}
-
-void find_phrases(carr searchPhrase, carr fileContent[], carr foundLines[], int numLinesRead){
-    int lineIndex = 0, foundLinesIndex = 0;
-    int wordLen=0;
-    for(;wordLen<searchPhrase.n 
-        && searchPhrase.arr[wordLen] != '\0';wordLen++){}
-    
-    if(wordLen == 0){
-        print_err_loc("The search phrase is empty (\'\')", "find_phrases()");
-        return ;
-    }
-
-    while(lineIndex<numLinesRead){
-        bool isFound = false;
-        // The upper limit is based on the last point where searchPhrase can start based on its length
-        for(int i=0; i<(fileContent[lineIndex].n - wordLen) && !isFound && fileContent[lineIndex].arr[i] != '\0'; i++){
-            // Tries to match searchPhrase from each letter
-            // Goes back whenever a mismatch happens
-            for(int j=0; j<(wordLen) && fileContent[lineIndex].arr[j] != '\0'; ++j){
-                if(fileContent[lineIndex].arr[i+j] != searchPhrase.arr[j]){
-                    break;
-                }
-
-                if(j == wordLen-1){
-                    isFound = true;
-                }
-            }
-        }
-
-        if(isFound){
-            strcpy(
-                foundLines[foundLinesIndex].arr,
-                fileContent[lineIndex].arr
-            );
-            foundLinesIndex+=1;
-        }
-
-        lineIndex+=1;
-    }
-
-    strcpy(foundLines[foundLinesIndex].arr, "\0");
-}
-
-void run_commands(carr* cmd[], int n_cmd){
-    if(strcmp(cmd[0]->arr, "here") == 0){
-        carr* pos = (carr*)malloc(sizeof(carr));
-        carr_alloc(pos, 1024);
-        find_current_loc(pos);
-
-        printf("you are at: %s\n", pos->arr);
-
-        carr_delete(pos);
-        free(pos);
-    }
-    else if(strcmp(cmd[0]->arr, "go") == 0){
-        change_dir(cmd[1]);
-    }
-    else if(strcmp(cmd[0]->arr, "show") == 0){
-        carr target_dir;
-        carr_init(&target_dir);
-
-        int N =100;
-
-        if(n_cmd == 1){
-            // Only shows the default number of files that is stored inside (100)
-            carr_alloc(&target_dir, 1024);
-            // Shows the files in the current directory if not specified
-            strcpy(target_dir.arr, ".");
-        }
-        else if(n_cmd == 2){
-            carr_alloc(&target_dir, cmd[1]->n);
-            carr_copy(&target_dir, cmd[1]);
-        }
-        else if(n_cmd == 3){
-            N = atoi(cmd[2]->arr);
-            carr_alloc(&target_dir, cmd[1]->n);
-            carr_copy(&target_dir, cmd[1]);
-        }
-
-        carr content[1024];
-
-        list_content(content, target_dir, N);
-        int i=0;
-
-        for(i=0; i<1024 && strcmp(content[i].arr, "\0")!=0; ++i){
-            printf("%s\n", content[i].arr);
-            carr_delete(&content[i]);
-        }
-
-        carr_delete(&content[i]); // clears the extra "\0" at the end
-
-        carr_delete(&target_dir);
-    }
-    else if(strcmp(cmd[0]->arr, "create") == 0 || strcmp(cmd[0]->arr, "cr") == 0){
-        if(n_cmd < 3){
-            printf("missing number of parameters for file/dir creation\n");
-            return ;
-        }
-
-        if(strcmp(cmd[1]->arr, "file") == 0){
-            if(n_cmd < 4){
-                create_file(cmd[2]->arr, false);
-            }
-            else{
-                
-                // lowercase the whole word
-                for(int i=0; i<cmd[3]->n && cmd[3]->arr[i] != '\0'; ++i){
-                    cmd[3]->arr[i] = tolower(cmd[3]->arr[i]);
-                }
-
-                bool isOverwrite = strcmp(cmd[3]->arr, "yes") == 0 || strcmp(cmd[3]->arr, "y") == 0;
-                create_file(cmd[2]->arr, isOverwrite);
-            }
-        }
-        else if(strcmp(cmd[1]->arr, "folder") == 0 || strcmp(cmd[1]->arr, "dir") == 0 || strcmp(cmd[1]->arr, "directory") == 0){
-            create_dir(cmd[2]->arr);
-        }
-
-    }
-    else if(strcmp(cmd[0]->arr, "history")==0){
-        show_history();
-    }
-    else if(strcmp(cmd[0]->arr, "read")==0){
-        carr fileContent[1024];
-
-        for(int i=0; i<1024; ++i){
-            carr_alloc(&(fileContent[i]), 1024);
-        }
-        
-        int numLinesRead = read_file(*cmd[1], fileContent);
-
-        for(int i=0; i<1024; ++i){
-            // Only prints the found ones
-            if(i<numLinesRead)
-                printf("%s", fileContent[i].arr);
-
-            // Clear the whole thing
-            carr_delete(&fileContent[i]);
-        }
-        printf("\n");
-
-        
-    }
-    else if(strcmp(cmd[0]->arr, "search")==0){
-        carr searchPhrase = {0};
-        carr_alloc(&searchPhrase, 1024);
-        carr_copy(&searchPhrase, cmd[1]);
-
-        if(strcmp(cmd[2]->arr, "in") != 0){
-            print_err_loc("Has to be searched in a file for now, will be changed in future", "run_commands() in search if statement");
-            carr_delete(&searchPhrase);
-            return ;
-        }
-        
-        carr fileContent[1024];
-
-        for(int i=0; i<1024; ++i){
-            // carr_init(&fileContent[i]);
-            carr_alloc(&fileContent[i], 1024);
-        }
-
-        int numLinesRead = read_file(*cmd[3], fileContent);
-
-        carr foundLines[1024];
-        for(int i=0; i<1024; ++i){
-            // carr_init(&foundLines[i]);
-            carr_alloc(&foundLines[i], 1024);
-        }
-
-        find_phrases(searchPhrase, fileContent, foundLines, numLinesRead);
-
-        for(int i=0; i<1024 && foundLines[i].arr[0] != '\0'; ++i){
-            printf("%d) %s", i, foundLines[i].arr);
-        }
-
-        carr_delete(&searchPhrase);
-        for(int i=0; i<1024; ++i){
-            carr_delete(&fileContent[i]);
-            carr_delete(&foundLines[i]);
-        }
-
-        printf("\n");
-    }
-    else{
-        run_ext_command(cmd, n_cmd);
-    }
+    carr_copy_carr(&history->list[history->used], command);
+    history->used +=1;
 }
 
 
-void print_err_all(const char msg[], const char type[], const char location[]){
-    fprintf(stderr, "a %s error occured in %s: %s\n", type, location, msg);
-}
-
-void print_err_loc(const char msg[], const char location[]){
-    fprintf(stderr, "an error occured in %s: %s\n", location, msg);
-}
-
-void print_err_msg(const char msg[]){
-    fprintf(stderr, "an error occured in: %s\n", msg);
-}
-
-/*
-All the carr modification/creation functions
-*/
-void carr_init(carr *c){
-    c->arr = NULL;
-    c->n = 0;
-}
-
-void carr_alloc(carr *c, int n){
-    c->n = n;
-
-    // This works like the new in c++
-    // We are allocating space that is the size of a char type times how many chars to allocate
-    c->arr = (char*)malloc(c->n * sizeof(char));
-}
-
-void carr_delete(carr *c){
-    c->n =0;
-    if(c->arr != NULL){
-        free(c->arr);
+void show_history(carr_list history){
+    for(size_t i=0; i<history.used; ++i){
+        // Colorful output
+        printf(C_CYAN "%zu)" C_RESET C_GREEN "%s" C_RESET "\n", i, history.list[i].arr);
     }
-}
-
-void carr_copy(carr *c1, carr *c2){
-    if(c1->n < c2->n){
-        // TODO: WIP
-    }
-    c1->n = c2->n;
-
-    if(c2->arr == NULL){
-        c1->n=0;
-    }
-
-    strcpy(c1->arr, c2->arr);
 }
