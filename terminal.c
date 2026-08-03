@@ -49,9 +49,17 @@ void print_err_msg(const char msg[]);
 void find_current_loc(carr *c);
 void add_history(carr_list* history, carr command);
 void seperate_commands(carr text, carr_list *cmd);
+void change_dir(carr new_dir);
+void list_content(carr_list* content, carr target_dir, int N);
+
+
+// Seperated main like this for testing purposes
+int main(){
+    start();
+}
 
 // carr *history[100];
-int main(){
+int start(){
     printf("Welcome to the my shell\n");
     printf("Type \"exit\" or \"0\" to exit the shell\n");
 
@@ -177,4 +185,39 @@ void show_history(carr_list history){
         // Colorful output
         printf(C_CYAN "%zu)" C_RESET C_GREEN "%s" C_RESET "\n", i, history.list[i].arr);
     }
+}
+
+void change_dir(carr new_dir){
+    // const carr curr = find_current_loc();
+    if(strcmp(new_dir.arr, "out") == 0){
+        chdir("..");
+    }
+    else{
+        chdir(new_dir.arr);
+    }
+}
+
+void list_content(carr_list* content, carr target_dir, int N){
+    DIR* dir = opendir(target_dir.arr);
+
+    struct dirent* entry;
+    
+    int i=0;
+    while(i<N && (entry = readdir(dir)) != NULL){
+        // Hides the hidden files
+        if(entry->d_name[0] == '.'){
+            i-=1;
+        }
+        else{
+            // printf("%s\n", entry->d_name);
+            // carr_alloc(&content->list[i], 1024);
+            carr_init(&content->list[i]);
+            carr_copy_char(&content->list[i], entry->d_name);
+            content->used+=1;
+            // strcpy(content[i].lis.arr, entry->d_name);
+        }
+        i+=1;
+    }
+
+    closedir(dir);
 }

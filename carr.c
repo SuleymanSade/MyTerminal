@@ -99,7 +99,7 @@ void carr_list_clear(carr_list *cl){
 // Deletes everything in the carr_list
 void carr_list_delete(carr_list *cl){
     carr_list_clear(cl);
-    
+
     if(cl->list != NULL){
         free(cl->list);
     }
