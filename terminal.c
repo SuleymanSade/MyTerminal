@@ -52,10 +52,14 @@ void seperate_commands(carr text, carr_list *cmd);
 void change_dir(carr new_dir);
 void list_content(carr_list* content, carr target_dir, int N);
 
+// command runner(s)
+void run_commands(carr_list cmd, carr_list history);
+
+int start();
 
 // Seperated main like this for testing purposes
 int main(){
-    start();
+    return start();
 }
 
 // carr *history[100];
@@ -93,11 +97,10 @@ int start(){
         if(text.used == 0) continue;
 
         add_history(&history, text);
-        // LEFT!!!!!!!!!!!!
 
         seperate_commands(text, &cmd);
         
-        // run_commands(cmd);
+        run_commands(cmd, history);
 
     } while(strcmp(text.arr, "exit") && strcmp(text.arr, "0"));
 
@@ -130,6 +133,7 @@ void seperate_commands(carr text, carr_list *cmd){
                                 
                 carr_delete(&buff);
                 carr_alloc(&buff, 1024);
+                last_div = i+1;
             }
         }
         else{
@@ -183,7 +187,7 @@ void add_history(carr_list* history, carr command){
 void show_history(carr_list history){
     for(size_t i=0; i<history.used; ++i){
         // Colorful output
-        printf(C_CYAN "%zu)" C_RESET C_GREEN "%s" C_RESET "\n", i, history.list[i].arr);
+        printf(C_CYAN "%zu) " C_RESET C_GREEN "%s" C_RESET "\n", i, history.list[i].arr);
     }
 }
 
@@ -220,4 +224,168 @@ void list_content(carr_list* content, carr target_dir, int N){
     }
 
     closedir(dir);
+}
+
+void run_commands(carr_list cmd, carr_list history){
+    if(strcmp(cmd.list[0].arr, "here") == 0){
+        carr pos;
+        carr_alloc(&pos, 1024);
+        find_current_loc(&pos);
+
+        printf("you are at: %s\n", pos.arr);
+
+        carr_delete(&pos);
+    }
+    else if(strcmp(cmd.list[0].arr, "go") == 0){
+        if(cmd.used < 2){
+            print_err_all("Too few arguments for command `go`", "missing args", "run_commands()");
+        }
+        else{
+            change_dir(cmd.list[1]);
+        }
+    }
+    else if(strcmp(cmd.list[0].arr, "show") == 0){
+        carr target_dir;
+        carr_init(&target_dir);
+
+        int N = 100;
+
+        switch (cmd.used)
+        {
+        case 1:
+            // Only shows the default number of files that is stored inside (100)
+            // Shows the files in the current directory if not specified
+            carr_copy_char(&target_dir, ".");
+            break;
+        case 2:
+            carr_copy_carr(&target_dir, cmd.list[1]);
+            break;
+        case 3:
+            N = atoi(cmd.list[2].arr);
+            carr_copy_carr(&target_dir, cmd.list[1]);
+            break;
+        default:
+            print_err_all("Too many arguments for command `show`", "missing args", "run_commands()");
+            goto error_label;
+            break;
+        }
+
+        carr_list content;
+        carr_list_alloc(&content, N);
+
+        list_content(&content, target_dir, N);
+
+        for(size_t i=0; i<content.used; ++i){
+            printf("%s\n", content.list[i].arr);
+        }
+
+        carr_list_delete(&content);
+        error_label:
+        carr_delete(&target_dir);
+    }
+    // else if(strcmp(cmd[0]->arr, "create") == 0 || strcmp(cmd[0]->arr, "cr") == 0){
+    //     if(n_cmd < 3){
+    //         printf("missing number of parameters for file/dir creation\n");
+    //         return ;
+    //     }
+
+    //     if(strcmp(cmd[1]->arr, "file") == 0){
+    //         if(n_cmd < 4){
+    //             create_file(cmd[2]->arr, false);
+    //         }
+    //         else{            
+    //             // lowercase the whole word
+    //             for(int i=0; i<cmd[3]->n && cmd[3]->arr[i] != '\0'; ++i){
+    //                 cmd[3]->arr[i] = tolower(cmd[3]->arr[i]);
+    //             }
+
+    //             bool isOverwrite = strcmp(cmd[3]->arr, "yes") == 0 || strcmp(cmd[3]->arr, "y") == 0;
+    //             create_file(cmd[2]->arr, isOverwrite);
+    //         }
+    //     }
+    //     else if(strcmp(cmd[1]->arr, "folder") == 0 || strcmp(cmd[1]->arr, "dir") == 0 || strcmp(cmd[1]->arr, "directory") == 0){
+    //         create_dir(cmd[2]->arr);
+    //     }
+
+    // }
+    else if(strcmp(cmd.list[0].arr, "history")==0){
+        show_history(history);
+    }
+    // else if(strcmp(cmd[0]->arr, "read")==0){
+    //     carr fileContent[1024];
+
+    //     for(int i=0; i<1024; ++i){
+    //         carr_alloc(&(fileContent[i]), 1024);
+    //     }
+        
+    //     int numLinesRead = read_file(*cmd[1], fileContent);
+
+    //     for(int i=0; i<1024; ++i){
+    //         // Only prints the found ones
+    //         if(i<numLinesRead)
+    //             printf("%s", fileContent[i].arr);
+
+    //         // Clear the whole thing
+    //         carr_delete(&fileContent[i]);
+    //     }
+    //     printf("\n");
+
+        
+    // }
+    // else if(strcmp(cmd[0]->arr, "search")==0){
+    //     carr searchPhrase = {0};
+    //     carr_alloc(&searchPhrase, 1024);
+    //     carr_copy(&searchPhrase, cmd[1]);
+
+    //     if(strcmp(cmd[2]->arr, "in") != 0){
+    //         print_err_loc("Has to be searched in a file for now, will be changed in future", "run_commands() in search if statement");
+    //         carr_delete(&searchPhrase);
+    //         return ;
+    //     }
+        
+    //     carr fileContent[1024];
+
+    //     for(int i=0; i<1024; ++i){
+    //         // carr_init(&fileContent[i]);
+    //         carr_alloc(&fileContent[i], 1024);
+    //     }
+
+    //     int numLinesRead = read_file(*cmd[3], fileContent);
+
+    //     carr foundLines[1024];
+    //     for(int i=0; i<1024; ++i){
+    //         // carr_init(&foundLines[i]);
+    //         carr_alloc(&foundLines[i], 1024);
+    //     }
+
+    //     find_phrases(searchPhrase, fileContent, foundLines, numLinesRead);
+
+    //     for(int i=0; i<1024 && foundLines[i].arr[0] != '\0'; ++i){
+    //         printf("%d) %s", i, foundLines[i].arr);
+    //     }
+
+    //     carr_delete(&searchPhrase);
+    //     for(int i=0; i<1024; ++i){
+    //         carr_delete(&fileContent[i]);
+    //         carr_delete(&foundLines[i]);
+    //     }
+
+    //     printf("\n");
+    // }
+    // else{
+    //     run_ext_command(cmd);
+    // }
+}
+
+
+void print_err_all(const char msg[], const char type[], const char location[]){
+    fprintf(stderr, "a %s error occured in %s: %s\n", type, location, msg);
+}
+
+void print_err_loc(const char msg[], const char location[]){
+    fprintf(stderr, "an error occured in %s: %s\n", location, msg);
+}
+
+void print_err_msg(const char msg[]){
+    fprintf(stderr, "an error occured in: %s\n", msg);
 }
