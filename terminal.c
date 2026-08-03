@@ -226,6 +226,52 @@ void list_content(carr_list* content, carr target_dir, int N){
     closedir(dir);
 }
 
+void create_file(carr file_name, bool is_overwrite){
+    FILE *fptr;
+    if(is_overwrite){
+        fptr = fopen(file_name.arr, "w");
+    }
+    else{
+        fptr = fopen(file_name.arr, "a");
+    }
+
+    fclose(fptr);
+}
+
+// NOTE that this code is replaced with a macro
+
+void run_ext_command(carr_list cmd){
+#if defined(_WIN32) || defined(_WIN64)
+    printf("Unknown command, note external bash commands are not supported in windows");
+
+#else
+    char* command[cmd.used + 1];
+    for(size_t i=0; i<cmd.used; ++i){
+        command[i] = cmd.list[i].arr;
+    }
+    command[cmd.used] = NULL;
+
+    // We create a copy of the current process, which the copy would be terminated by exec
+    pid_t pid = fork();
+    
+    if(pid == 0){
+        // Child process
+
+        // Runs the external command
+        execvp(command[0], command);
+    }
+    else{
+        // Parent process
+        int status;
+        // Waits for child process to finish
+        waitpid(pid, &status, 0);
+    }
+
+    
+#endif
+}
+
+
 void run_commands(carr_list cmd, carr_list history){
     if(strcmp(cmd.list[0].arr, "here") == 0){
         carr pos;
@@ -283,31 +329,31 @@ void run_commands(carr_list cmd, carr_list history){
         error_label:
         carr_delete(&target_dir);
     }
-    // else if(strcmp(cmd[0]->arr, "create") == 0 || strcmp(cmd[0]->arr, "cr") == 0){
-    //     if(n_cmd < 3){
-    //         printf("missing number of parameters for file/dir creation\n");
-    //         return ;
-    //     }
+    else if(strcmp(cmd.list[0].arr, "create") == 0 || strcmp(cmd.list[0].arr, "cr") == 0){
+        if(cmd.used < 3){
+            print_err_all("Too few arguments for command `create`/`cr`", "too many args", "run_commands()");
+            return ;
+        }
 
-    //     if(strcmp(cmd[1]->arr, "file") == 0){
-    //         if(n_cmd < 4){
-    //             create_file(cmd[2]->arr, false);
-    //         }
-    //         else{            
-    //             // lowercase the whole word
-    //             for(int i=0; i<cmd[3]->n && cmd[3]->arr[i] != '\0'; ++i){
-    //                 cmd[3]->arr[i] = tolower(cmd[3]->arr[i]);
-    //             }
+        if(strcmp(cmd.list[1].arr, "file") == 0){
+            if(cmd.used < 4){
+                create_file(cmd.list[2], false);
+            }
+            else{            
+                // lowercase the whole word
+                for(size_t i=0; i < cmd.list[3].used; ++i){
+                    cmd.list[3].arr[i] = tolower(cmd.list[3].arr[i]);
+                }
 
-    //             bool isOverwrite = strcmp(cmd[3]->arr, "yes") == 0 || strcmp(cmd[3]->arr, "y") == 0;
-    //             create_file(cmd[2]->arr, isOverwrite);
-    //         }
-    //     }
-    //     else if(strcmp(cmd[1]->arr, "folder") == 0 || strcmp(cmd[1]->arr, "dir") == 0 || strcmp(cmd[1]->arr, "directory") == 0){
-    //         create_dir(cmd[2]->arr);
-    //     }
+                bool isOverwrite = strcmp(cmd.list[3].arr, "yes") == 0 || strcmp(cmd.list[3].arr, "y") == 0;
+                create_file(cmd.list[2], isOverwrite);
+            }
+        }
+        else if(strcmp(cmd.list[1].arr, "folder") == 0 || strcmp(cmd.list[1].arr, "dir") == 0 || strcmp(cmd.list[1].arr, "directory") == 0){
+            create_dir(cmd.list[2].arr);
+        }
 
-    // }
+    }
     else if(strcmp(cmd.list[0].arr, "history")==0){
         show_history(history);
     }
@@ -372,9 +418,9 @@ void run_commands(carr_list cmd, carr_list history){
 
     //     printf("\n");
     // }
-    // else{
-    //     run_ext_command(cmd);
-    // }
+    else{
+        run_ext_command(cmd);
+    }
 }
 
 
