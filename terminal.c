@@ -48,6 +48,7 @@ void print_err_msg(const char msg[]);
 // command utils
 void find_current_loc(carr *c);
 void add_history(carr_list* history, carr command);
+void seperate_commands(carr text, carr_list *cmd);
 
 // carr *history[100];
 int main(){
@@ -65,8 +66,6 @@ int main(){
 
     do{
         carr_list_clear(&cmd);
-        carr_alloc(&cmd.list[0], 1024);
-        cmd.used +=1;
 
         carr curr_loc;
         carr_alloc(&curr_loc, 1024);
@@ -88,7 +87,7 @@ int main(){
         add_history(&history, text);
         // LEFT!!!!!!!!!!!!
 
-        // seperate_commands(text, cmd);
+        seperate_commands(text, &cmd);
         
         // run_commands(cmd);
 
@@ -100,6 +99,47 @@ int main(){
     carr_delete(&text);
 
     return 1;
+}
+
+void seperate_commands(carr text, carr_list *cmd){
+    // We are using a buffer instead of cmd to directly store the data
+    // So that each of our allocation in cmd perfectly matches the needed size
+    carr buff;
+    carr_alloc(&buff, 1024);
+    int last_div =0;
+    for(size_t i = 0; i < text.used; ++i){
+        // Seperates by spaces
+        if(text.arr[i] == ' '){
+            // The reason for this additional condition check is to disregard double spaces as a single space 
+            // so it doesn't impact the command seperation
+            if(buff.used > 0){
+                buff.arr[buff.used] = '\0';
+                buff.used +=1;
+
+                carr_alloc(&cmd->list[cmd->used], buff.used);
+                carr_copy_carr(&cmd->list[cmd->used], buff);
+                cmd->used +=1;
+                                
+                carr_delete(&buff);
+                carr_alloc(&buff, 1024);
+            }
+        }
+        else{
+            buff.arr[i - last_div] = text.arr[i];
+            buff.used+=1;
+        }
+    }
+
+    if(buff.used > 0){
+        buff.arr[buff.used] = '\0';
+        buff.used +=1;
+
+        carr_alloc(&cmd->list[cmd->used], buff.used);
+        carr_copy_carr(&cmd->list[cmd->used], buff);
+        cmd->used +=1;
+                        
+        carr_delete(&buff);
+    }
 }
 
 void find_current_loc(carr *c){

@@ -73,7 +73,7 @@ All the carr_list modification/creation functions
 */
 
 void carr_list_init(carr_list *cl){
-    cl = NULL;
+    cl->list = NULL;
     cl->capacity=0;
     cl->used=0;
 }
@@ -99,9 +99,12 @@ void carr_list_clear(carr_list *cl){
 // Deletes everything in the carr_list
 void carr_list_delete(carr_list *cl){
     carr_list_clear(cl);
+    
+    if(cl->list != NULL){
+        free(cl->list);
+    }
 
-    free(cl->list);
-    cl->capacity = 0;
+    carr_list_init(cl);
 }
 
 void carr_list_fill(carr_list *cl, size_t number_carr, size_t carr_cap){
