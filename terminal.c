@@ -271,6 +271,63 @@ void run_ext_command(carr_list cmd){
 #endif
 }
 
+void read_file(carr fileName, carr_list* fileContent){ 
+    FILE *fileptr = fopen(fileName.arr, "r");
+
+    
+    // No file found
+    if(fileptr == NULL){
+        print_err_all("undable to find the file", "invalid filename", "read_file()");
+        return ;
+    }
+
+    // File found
+
+    char* lineInput = (char*)malloc(sizeof(char) * 1024);
+
+    // Loop goes through the file and puts each line to the filecontent arr
+    while(fgets(lineInput, 1024, fileptr) != NULL){
+        carr_init(&fileContent->list[fileContent->used]);
+        carr_copy_char(&fileContent->list[fileContent->used], lineInput);
+        fileContent->used+=1;
+    }
+    free(lineInput);
+
+    fclose(fileptr);
+}
+
+void find_phrases(carr searchPhrase, carr_list fileContent, carr_list* foundLines){    
+    if(searchPhrase.used == 0){
+        print_err_loc("The search phrase is empty (\'\')", "find_phrases()");
+        return ;
+    }
+
+    for(size_t lineIndex=0; lineIndex<fileContent.used; ++lineIndex){
+        bool isFound = false;
+        // The upper limit is based on the last point where searchPhrase can start based on its length
+        for(size_t i = 0; (i + searchPhrase.used)<(fileContent.list[lineIndex].used) && !isFound; i++){
+            // Tries to match searchPhrase from each letter
+            // Goes back whenever a mismatch happens
+            for(size_t j=0; j<(searchPhrase.used) && fileContent.list[lineIndex].used > (j+i); ++j){
+                if(fileContent.list[lineIndex].arr[i+j] != searchPhrase.arr[j]){
+                    break;
+                }
+
+                // -2 because of extra '\0' at the end of searchPhrase
+                if(j == searchPhrase.used-2){
+                    isFound = true;
+                }
+            }
+        }
+
+        if(isFound){
+            carr_init(&foundLines->list[foundLines->used]);
+            carr_copy_carr(&foundLines->list[foundLines->used], fileContent.list[lineIndex]);
+            foundLines->used +=1;
+        }
+    }
+}
+
 
 void run_commands(carr_list cmd, carr_list history){
     if(strcmp(cmd.list[0].arr, "here") == 0){
@@ -357,67 +414,54 @@ void run_commands(carr_list cmd, carr_list history){
     else if(strcmp(cmd.list[0].arr, "history")==0){
         show_history(history);
     }
-    // else if(strcmp(cmd[0]->arr, "read")==0){
-    //     carr fileContent[1024];
-
-    //     for(int i=0; i<1024; ++i){
-    //         carr_alloc(&(fileContent[i]), 1024);
-    //     }
+    else if(strcmp(cmd.list[0].arr, "read")==0){
+        carr_list fileContent;
+        carr_list_alloc(&fileContent, 1024);
         
-    //     int numLinesRead = read_file(*cmd[1], fileContent);
+        read_file(cmd.list[1], &fileContent);
 
-    //     for(int i=0; i<1024; ++i){
-    //         // Only prints the found ones
-    //         if(i<numLinesRead)
-    //             printf("%s", fileContent[i].arr);
+        for(size_t i=0; i<fileContent.used; ++i){
+            // Only prints the found ones
+            printf("%s", fileContent.list[i].arr);
+        }
+        carr_list_delete(&fileContent);
+        printf("\n");
+    }
+    else if(strcmp(cmd.list[0].arr, "search") == 0){
+        if(cmd.used < 4){
+            print_err_all("Too few arguments for command `search`", "too few args", "run_commands()");
+            return ;
+        }
 
-    //         // Clear the whole thing
-    //         carr_delete(&fileContent[i]);
-    //     }
-    //     printf("\n");
+        carr searchPhrase;
+        carr_init(&searchPhrase);
+        carr_copy_carr(&searchPhrase, cmd.list[1]);
 
-        
-    // }
-    // else if(strcmp(cmd[0]->arr, "search")==0){
-    //     carr searchPhrase = {0};
-    //     carr_alloc(&searchPhrase, 1024);
-    //     carr_copy(&searchPhrase, cmd[1]);
+        if(strcmp(cmd.list[2].arr, "in") != 0){
+            print_err_loc("Has to be searched in a file for now, will be changed in future", "run_commands() in search if statement");
+            carr_delete(&searchPhrase);
+            return ;
+        }
 
-    //     if(strcmp(cmd[2]->arr, "in") != 0){
-    //         print_err_loc("Has to be searched in a file for now, will be changed in future", "run_commands() in search if statement");
-    //         carr_delete(&searchPhrase);
-    //         return ;
-    //     }
-        
-    //     carr fileContent[1024];
+        carr_list fileContent;
+        carr_list_alloc(&fileContent, 1024);
 
-    //     for(int i=0; i<1024; ++i){
-    //         // carr_init(&fileContent[i]);
-    //         carr_alloc(&fileContent[i], 1024);
-    //     }
+        read_file(cmd.list[3], &fileContent);
 
-    //     int numLinesRead = read_file(*cmd[3], fileContent);
+        carr_list foundLines;
+        carr_list_alloc(&foundLines, 1024);
 
-    //     carr foundLines[1024];
-    //     for(int i=0; i<1024; ++i){
-    //         // carr_init(&foundLines[i]);
-    //         carr_alloc(&foundLines[i], 1024);
-    //     }
+        find_phrases(searchPhrase, fileContent, &foundLines);
 
-    //     find_phrases(searchPhrase, fileContent, foundLines, numLinesRead);
+        for(size_t i=0; i<foundLines.used; ++i){
+            printf("%ld) %s", i, foundLines.list[i].arr);
+        }
+        printf("\n");
 
-    //     for(int i=0; i<1024 && foundLines[i].arr[0] != '\0'; ++i){
-    //         printf("%d) %s", i, foundLines[i].arr);
-    //     }
-
-    //     carr_delete(&searchPhrase);
-    //     for(int i=0; i<1024; ++i){
-    //         carr_delete(&fileContent[i]);
-    //         carr_delete(&foundLines[i]);
-    //     }
-
-    //     printf("\n");
-    // }
+        carr_delete(&searchPhrase);
+        carr_list_delete(&foundLines);
+        carr_list_delete(&fileContent);
+    }
     else{
         run_ext_command(cmd);
     }

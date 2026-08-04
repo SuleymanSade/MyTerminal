@@ -99,7 +99,7 @@ I have recently gotten curious about low level systems and how terminals work. S
 - Since, in a sense, I am rebuilding my whole code base I decided to change my way of doing some of these things. For example now history's capacity doubles if it reaches its cap, and each command stored in history has the exact capacity of the information that they store. This could easily bring down memory from 100x1024bytes to something around 100x50bytes which is a great improvement. (50 is the approximate char count in a command)
 - I learned that I can actually add colors to my terminal using some escape characters, this has great potential in the future, for now I will sprinkle it to a few places in my code just for fun.
 - Added a `Makefile` to make running code easier, especially the new `carr.c` and `carr.h` requires extra steps or very long code to run. The Makefile is taken from an online resource and slightly modified to fulfill my needs.
-
+- I pretty much replaced every loop with size_t instead of int for i, but it comes with a rist. Since size_t is only positive, negative values resulting from substracting can cause overflow and have an incredibly high number. But shifting the math a bit generally solves the problem.
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
