@@ -88,12 +88,25 @@ I have recently gotten curious about low level systems and how terminals work. S
 - I realized that using a linked list for the `history` would remove the limit on how many commands that can be stored, as each command can just be added as a node at the start. But for now I will just clear the memory leak that `valgrind` found
 - I used valgrind and did a full test, I found 3MB of memory leak which I fixed them all
 
+### 7/29-
+- Decided to change the `carr.n` and the newly added `carr.capacity` to be in size_t, for better storage for size. They don't have a negative sizing, and adaptive to the bit system of the computer.
+- Added `carr.capacity` to hold the capacity as outlines previously.
+- I changed my `carr_copy(carr c1, carr c2)` logic to work even if the text pased down is too big. I made it so if the c2.used is too large for c1.capacity, then I delete c1 and then reallocate space to be c2.used.
+- Addded `carr_list` struct to know when a sentence is not allocated yet, and more dynamically allocate new sentences. This way would allow us to manage memory better.
+- Added `carr_copy_char` to standarize carr operations and add extra protection. This was also needed to automatically manage `.used` and `.capacity`
+- As the usage of `carr` grew and `carr_list` was added, I decided to seperate them from rest of the code for better organization purposes. Which led me to creating `carr.h` and `carr.c`.
+- I realized, I was already doing something similar to how `carr_list.used` would work with different variables. This makes the transition smoothers as well as clear coding usage.
+- Since, in a sense, I am rebuilding my whole code base I decided to change my way of doing some of these things. For example now history's capacity doubles if it reaches its cap, and each command stored in history has the exact capacity of the information that they store. This could easily bring down memory from 100x1024bytes to something around 100x50bytes which is a great improvement. (50 is the approximate char count in a command)
+- I learned that I can actually add colors to my terminal using some escape characters, this has great potential in the future, for now I will sprinkle it to a few places in my code just for fun.
+- Added a `Makefile` to make running code easier, especially the new `carr.c` and `carr.h` requires extra steps or very long code to run. The Makefile is taken from an online resource and slightly modified to fulfill my needs.
+- I pretty much replaced every loop with size_t instead of int for i, but it comes with a rist. Since size_t is only positive, negative values resulting from substracting can cause overflow and have an incredibly high number. But shifting the math a bit generally solves the problem.
+
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
 - [x] Implementing child processes for certain commands to protect the main process
 - [ ] Adding bunch of error protection and edge cases as the code is NOT SAFE at all. I just disregarded all the error handling for the sake of development speed.
 - [x] Adding a feature to read files and show their contents
-- [ ] Adding a feature to search for keywords in files (similar to `grep` in bash)
+- [x] Adding a feature to search for keywords in files (similar to `grep` in bash)
 - [ ] Adding a feature to delete files an dirs
 - [ ] Change the content of files (tricky, since I need to have some kind of text editor in the terminal)
 - [x] A `history` command to show previous commands
@@ -103,4 +116,4 @@ I have recently gotten curious about low level systems and how terminals work. S
 - [ ] Adding `&` for running commands in the background, same issue as the previous one, likely can be done with `fixed()` and `exec()` though
 - [ ] Adding color to the terminal output, like when `search` is used it can color the keyword
 - [ ] instead of using `get_line()`, process each input as they are typed ot have functionality such as up or down arrow key copying previous input. Very fundamental change, and might be needed to add certain features
-- Implement a linked list for `history`
+- [ ] Implement a linked list for `history`
