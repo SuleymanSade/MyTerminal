@@ -8,6 +8,7 @@
 
 #include "../include/carr.h"
 #include "../include/utils.h"
+#include "../include/commands.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 // This part is never seen by a non-windows machine, eg linux and mac
@@ -179,5 +180,172 @@ void find_phrases(carr searchPhrase, carr_list fileContent, carr_list* foundLine
             carr_copy_carr(&foundLines->list[foundLines->used], fileContent.list[lineIndex]);
             foundLines->used +=1;
         }
+    }
+}
+
+// ALL THE RUNNER COMMANDS
+
+void run_here(){
+    carr pos;
+    carr_alloc(&pos, 1024);
+    find_current_loc(&pos);
+
+    printf("you are at: %s\n", pos.arr);
+
+    carr_delete(&pos);
+}
+
+void run_go(carr_list cmd){
+    if(cmd.used < 2){
+        print_err_all("Too few arguments for command `go`", "missing args", "run_commands()");
+    }
+    else{
+        change_dir(cmd.list[1]);
+    }
+}
+
+void run_show(carr_list cmd){
+    carr target_dir;
+    carr_init(&target_dir);
+
+    int N = 100;
+
+    switch (cmd.used)
+    {
+    case 1:
+        // Only shows the default number of files that is stored inside (100)
+        // Shows the files in the current directory if not specified
+        carr_copy_char(&target_dir, ".");
+        break;
+    case 2:
+        carr_copy_carr(&target_dir, cmd.list[1]);
+        break;
+    case 3:
+        N = atoi(cmd.list[2].arr);
+        carr_copy_carr(&target_dir, cmd.list[1]);
+        break;
+    default:
+        print_err_all("Too many arguments for command `show`", "missing args", "run_commands()");
+        goto error_label;
+        break;
+    }
+
+    carr_list content;
+    carr_list_alloc(&content, N);
+
+    list_content(&content, target_dir, N);
+
+    for(size_t i=0; i<content.used; ++i){
+        printf("%s\n", content.list[i].arr);
+    }
+
+    carr_list_delete(&content);
+    error_label:
+    carr_delete(&target_dir);
+}
+
+void run_create(carr_list cmd){
+    if(cmd.used < 3){
+        print_err_all("Too few arguments for command `create`/`cr`", "too many args", "run_commands()");
+        return ;
+    }
+
+    if(strcmp(cmd.list[1].arr, "file") == 0){
+        if(cmd.used < 4){
+            create_file(cmd.list[2], false);
+        }
+        else{            
+            // lowercase the whole word
+            for(size_t i=0; i < cmd.list[3].used; ++i){
+                cmd.list[3].arr[i] = tolower(cmd.list[3].arr[i]);
+            }
+
+            bool isOverwrite = strcmp(cmd.list[3].arr, "yes") == 0 || strcmp(cmd.list[3].arr, "y") == 0;
+            create_file(cmd.list[2], isOverwrite);
+        }
+    }
+    else if(strcmp(cmd.list[1].arr, "folder") == 0 || strcmp(cmd.list[1].arr, "dir") == 0 || strcmp(cmd.list[1].arr, "directory") == 0){
+        create_dir(cmd.list[2].arr);
+    }
+}
+
+void run_history(carr_list history){
+    show_history(history);
+}
+
+void run_read(carr_list cmd){
+    carr_list fileContent;
+    carr_list_alloc(&fileContent, 1024);
+    
+    read_file(cmd.list[1], &fileContent);
+
+    for(size_t i=0; i<fileContent.used; ++i){
+        // Only prints the found ones
+        printf("%s", fileContent.list[i].arr);
+    }
+    carr_list_delete(&fileContent);
+    printf("\n");
+}
+
+void run_search(carr_list cmd){
+    if(cmd.used < 4){
+        print_err_all("Too few arguments for command `search`", "too few args", "run_commands()");
+        return ;
+    }
+
+    carr searchPhrase;
+    carr_init(&searchPhrase);
+    carr_copy_carr(&searchPhrase, cmd.list[1]);
+
+    if(strcmp(cmd.list[2].arr, "in") != 0){
+        print_err_loc("Has to be searched in a file for now, will be changed in future", "run_commands() in search if statement");
+        carr_delete(&searchPhrase);
+        return ;
+    }
+
+    carr_list fileContent;
+    carr_list_alloc(&fileContent, 1024);
+
+    read_file(cmd.list[3], &fileContent);
+
+    carr_list foundLines;
+    carr_list_alloc(&foundLines, 1024);
+
+    find_phrases(searchPhrase, fileContent, &foundLines);
+
+    for(size_t i=0; i<foundLines.used; ++i){
+        printf("%ld) %s", i, foundLines.list[i].arr);
+    }
+    printf("\n");
+
+    carr_delete(&searchPhrase);
+    carr_list_delete(&foundLines);
+    carr_list_delete(&fileContent);
+}
+
+void run_commands(carr_list cmd, carr_list history){
+    if(strcmp(cmd.list[0].arr, "here") == 0){
+        run_here();
+    }
+    else if(strcmp(cmd.list[0].arr, "go") == 0){
+        run_go(cmd);
+    }
+    else if(strcmp(cmd.list[0].arr, "show") == 0){
+        run_show(cmd);
+    }
+    else if(strcmp(cmd.list[0].arr, "create") == 0 || strcmp(cmd.list[0].arr, "cr") == 0){
+        run_create(cmd);
+    }
+    else if(strcmp(cmd.list[0].arr, "history")==0){
+        run_history(history);
+    }
+    else if(strcmp(cmd.list[0].arr, "read")==0){
+        run_read(cmd);
+    }
+    else if(strcmp(cmd.list[0].arr, "search") == 0){
+        run_search(cmd);
+    }
+    else{
+        run_ext_command(cmd);
     }
 }

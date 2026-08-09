@@ -4,12 +4,6 @@
 #include <stddef.h>
 #include "../include/carr.h"
 
-typedef struct
-{
-    carr command;
-    carr_list content;
-} Command;
-
 // We are using this approach to prevent incompatibility between linux and windows file creation
 // In Windows the header and the function usage are different than that of linux
 // The reason why we are doing this definition here is because it discards the other statement and not seen by compilar
@@ -43,5 +37,14 @@ void run_ext_command(carr_list cmd);
 void read_file(carr fileName, carr_list* fileContent);
 void find_phrases(carr searchPhrase, carr_list fileContent, carr_list* foundLines);
 
+// COMMAND RUNNERS
+void run_here();
+void run_go(carr_list cmd);
+void run_show(carr_list cmd);
+void run_create(carr_list cmd);
+void run_read(carr_list cmd);
+void run_search(carr_list cmd);
+void run_history(carr_list history);
+void run_commands(carr_list cmd, carr_list history);
 
 #endif
