@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic -g -fsanitize=address,undefined -std=c17
 
 # All .c files in this directory
-SRCS = $(wildcard *.c)
+SRCS = $(wildcard src/*.c)
 
 # Corresponding .o files
 OBJS = $(SRCS:.c=.o)

@@ -88,8 +88,10 @@ I have recently gotten curious about low level systems and how terminals work. S
 - I realized that using a linked list for the `history` would remove the limit on how many commands that can be stored, as each command can just be added as a node at the start. But for now I will just clear the memory leak that `valgrind` found
 - I used valgrind and did a full test, I found 3MB of memory leak which I fixed them all
 
-### 7/29-
-- Decided to change the `carr.n` and the newly added `carr.capacity` to be in size_t, for better storage for size. They don't have a negative sizing, and adaptive to the bit system of the computer.
+### 7/29- 8/7
+- Decided to change the `carr.n` and the newly added `carr.capacity` to be in size_t, for better storage for size. They don't have a negative sizing, and adaptive to the bit sys
+       ↓
+Command 2 stdintem of the computer.
 - Added `carr.capacity` to hold the capacity as outlines previously.
 - I changed my `carr_copy(carr c1, carr c2)` logic to work even if the text pased down is too big. I made it so if the c2.used is too large for c1.capacity, then I delete c1 and then reallocate space to be c2.used.
 - Addded `carr_list` struct to know when a sentence is not allocated yet, and more dynamically allocate new sentences. This way would allow us to manage memory better.
@@ -100,6 +102,13 @@ I have recently gotten curious about low level systems and how terminals work. S
 - I learned that I can actually add colors to my terminal using some escape characters, this has great potential in the future, for now I will sprinkle it to a few places in my code just for fun.
 - Added a `Makefile` to make running code easier, especially the new `carr.c` and `carr.h` requires extra steps or very long code to run. The Makefile is taken from an online resource and slightly modified to fulfill my needs.
 - I pretty much replaced every loop with size_t instead of int for i, but it comes with a rist. Since size_t is only positive, negative values resulting from substracting can cause overflow and have an incredibly high number. But shifting the math a bit generally solves the problem.
+
+### 8/8- :
+- I was initially planning to create a `Command` struct to keep things neat and transfer command more easily especially planned adition of pipes in the future. However I found couple of reason not to do
+- The planned structure for `Command` was to have 2 variable, a `carr` variable to hold the command and a `carr_list` to hold the arguments. However with the current approach 1 `carr_list` can already achieve this by having the index 0 as the command.
+- This only adds an extra layer of complexity to the already existing structure of `carr` and `carr_list`. Also the biggest drawback is the need to add `cmd.` or something similar at the start of a command which is extra work making the code less readable. Think about `cmd.content.list[0].arr[1]`, it just seems chaotic.
+- I decided to move all the command utils to `command.c` and created runners for it. So `run_commands()` doesn't have to hold the code for every commands instead just call their callers.
+
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
