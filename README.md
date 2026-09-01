@@ -103,12 +103,23 @@ Command 2 stdintem of the computer.
 - Added a `Makefile` to make running code easier, especially the new `carr.c` and `carr.h` requires extra steps or very long code to run. The Makefile is taken from an online resource and slightly modified to fulfill my needs.
 - I pretty much replaced every loop with size_t instead of int for i, but it comes with a rist. Since size_t is only positive, negative values resulting from substracting can cause overflow and have an incredibly high number. But shifting the math a bit generally solves the problem.
 
-### 8/8- :
+### 8/8
 - I was initially planning to create a `Command` struct to keep things neat and transfer command more easily especially planned adition of pipes in the future. However I found couple of reason not to do
 - The planned structure for `Command` was to have 2 variable, a `carr` variable to hold the command and a `carr_list` to hold the arguments. However with the current approach 1 `carr_list` can already achieve this by having the index 0 as the command.
 - This only adds an extra layer of complexity to the already existing structure of `carr` and `carr_list`. Also the biggest drawback is the need to add `cmd.` or something similar at the start of a command which is extra work making the code less readable. Think about `cmd.content.list[0].arr[1]`, it just seems chaotic.
 - I decided to move all the command utils to `command.c` and created runners for it. So `run_commands()` doesn't have to hold the code for every commands instead just call their callers.
 
+### 8/31
+- After some consideration I decided to add tokenization when breaking down commands. This decision stem from the desire to implement features such as pipes and other structures. in order to do that I needed a way to standirize my inpu and a recent project I contributed to used tokenization to break down text into pieces that are easier categorize and run. That is what I decided to go with as well. This new structure would also allow the usage of `""` as previously each piece was seperated with spaces, not allowing the usage of quotation
+- My approach would be to do a `enum TokenType` and create the types of `Content` for the content of the command, `Command` for the commands itself, `Operator` for operators like pipe and `Flag` for modifiers that change the way the function runs. I am unsure to wether combine content and command to one as structurally they are quite similar.
+- My implementation would include 2 lists, one with the name `TokenType` and other with `TokenValue`. `TokenType` would contain the types while the other values. Example as the following:
+
+| index      | 0 | 1 | 2 | 3 | 4 | 5|
+| --- | --- | --- | --- | --- | --- | --- |
+| TokenType  | Command | Content | Operator | Command | Content | Content
+| TokenValue | go | out | & | cr | file | hello.py 
+
+- For now I will do a simple execution of this and when I start implementing operators I will make changes appropriately.
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
@@ -125,4 +136,3 @@ Command 2 stdintem of the computer.
 - [ ] Adding `&` for running commands in the background, same issue as the previous one, likely can be done with `fixed()` and `exec()` though
 - [ ] Adding color to the terminal output, like when `search` is used it can color the keyword
 - [ ] instead of using `get_line()`, process each input as they are typed ot have functionality such as up or down arrow key copying previous input. Very fundamental change, and might be needed to add certain features
-- [ ] Implement a linked list for `history`
