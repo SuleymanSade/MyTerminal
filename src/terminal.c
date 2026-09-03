@@ -63,6 +63,10 @@ int start(){
         
         run_commands(cmd, history);
 
+        for(size_t i=0; i < cmd.used; ++i){
+            printf("%s\n",cmd.list[i].arr);
+        }
+
     } while(strcmp(text.arr, "exit") && strcmp(text.arr, "0"));
 
     // Clear everything after exit
@@ -77,11 +81,17 @@ void seperate_commands(carr text, carr_list *cmd){
     // We are using a buffer instead of cmd to directly store the data
     // So that each of our allocation in cmd perfectly matches the needed size
     carr buff;
+    bool isQuoteOpen = false, lastSeenBackSlash = false;
+    char quoteType = ' '; // " , ', `
     carr_alloc(&buff, 1024);
     int last_div =0;
     for(size_t i = 0; i < text.used; ++i){
         // Seperates by spaces
-        if(text.arr[i] == ' '){
+        if( (!isQuoteOpen  && text.arr[i] == ' ') 
+            || (isQuoteOpen && text.arr[i] == quoteType && !lastSeenBackSlash)){
+            
+            isQuoteOpen = false;
+
             // The reason for this additional condition check is to disregard double spaces as a single space 
             // so it doesn't impact the command seperation
             if(buff.used > 0){
@@ -98,8 +108,26 @@ void seperate_commands(carr text, carr_list *cmd){
             }
         }
         else{
-            buff.arr[i - last_div] = text.arr[i];
-            buff.used+=1;
+            if (!isQuoteOpen 
+                && (text.arr[i] == '\'' || text.arr[i] == '"' || text.arr[i] == '`')){
+                
+                isQuoteOpen = true;
+                quoteType = text.arr[i];
+                last_div = i+1;
+            }
+            else{
+                // We don't want to include the quote to the buff
+                buff.arr[i - last_div] = text.arr[i];
+                buff.used+=1;;
+            }
+
+            // To allow usage of quotes in strings with the backslash
+            if (text.arr[i] == '\\') {
+                lastSeenBackSlash = true;
+            }
+            else{
+                lastSeenBackSlash = false;
+            }
         }
     }
 
