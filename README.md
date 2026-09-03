@@ -103,7 +103,7 @@ Command 2 stdintem of the computer.
 - Added a `Makefile` to make running code easier, especially the new `carr.c` and `carr.h` requires extra steps or very long code to run. The Makefile is taken from an online resource and slightly modified to fulfill my needs.
 - I pretty much replaced every loop with size_t instead of int for i, but it comes with a rist. Since size_t is only positive, negative values resulting from substracting can cause overflow and have an incredibly high number. But shifting the math a bit generally solves the problem.
 
-### 8/8
+### 8/8:
 - I was initially planning to create a `Command` struct to keep things neat and transfer command more easily especially planned adition of pipes in the future. However I found couple of reason not to do
 - The planned structure for `Command` was to have 2 variable, a `carr` variable to hold the command and a `carr_list` to hold the arguments. However with the current approach 1 `carr_list` can already achieve this by having the index 0 as the command.
 - This only adds an extra layer of complexity to the already existing structure of `carr` and `carr_list`. Also the biggest drawback is the need to add `cmd.` or something similar at the start of a command which is extra work making the code less readable. Think about `cmd.content.list[0].arr[1]`, it just seems chaotic.
@@ -120,6 +120,10 @@ Command 2 stdintem of the computer.
 | TokenValue | go | out | & | cr | file | hello.py 
 
 - For now I will do a simple execution of this and when I start implementing operators I will make changes appropriately.
+
+### 9/1:
+- Now quotes (", ', `) allow for being able to write text with spaces not being used to seperate elements inside them. Not only used for strings, but anything to group things that are spaced or not. You can technically have quotes around each element of the command, which doesn't have a clear downside for now.
+- Also forward slash `\` would allow including the same quote type in the text, similar to how strings behave.
 
 ## Future development plans
 - [x] Allowing other misc commands to be directed to `exec()` which would run any command that is possible to run in a regular bash, mostly useful for running stuff like `python file.py` or compile a file with `gcc` (it might be too much to hand-code all, i would rather focus on more unique features)
